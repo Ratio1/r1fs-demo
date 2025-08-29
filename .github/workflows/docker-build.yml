@@ -47,5 +47,5 @@ jobs:
           context: .
           push: true
           tags: |
-            docker.io/tvitalii/ratio1-drive:latest
+            docker.io/ratio1/ratio1-drive:latest
           platforms: linux/amd64,linux/arm64
