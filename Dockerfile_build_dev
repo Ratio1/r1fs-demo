@@ -1,0 +1,48 @@
+FROM node:22-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies for build and debugging)
+RUN npm i
+
+# Copy source code
+COPY . .
+
+# Build the application with development optimizations
+RUN cp next.config.dev.js next.config.js
+RUN npm run build
+
+# Keep dev dependencies for debugging capabilities
+# Don't run npm prune --production to keep dev tools available
+
+# Expose port
+EXPOSE 3333
+
+# Set environment variables for development build with maximum verbosity
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV DEBUG=true
+ENV NEXT_DEBUG=true
+ENV NEXT_DEBUG_SERVER=true
+ENV NEXT_DEBUG_CLIENT=true
+ENV NEXT_DEBUG_BUILD=true
+ENV LOG_LEVEL=debug
+ENV VERBOSE=true
+ENV NEXT_LOG_LEVEL=verbose
+ENV CSTORE_API_URL=http://localhost:31234
+ENV R1FS_API_URL=http://localhost:31235
+
+# Create a non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# Change ownership of the app directory
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# Start the application with development mode for detailed error messages
+CMD ["npm", "start"] 

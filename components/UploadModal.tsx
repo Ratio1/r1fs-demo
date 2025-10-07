@@ -73,10 +73,10 @@ export default function UploadModal({ isOpen, onClose, transferMode, onUploadSuc
     try {
       if (transferMode === 'streaming') {
         const formData = new FormData();
-        formData.append('file', selectedFile);
         if (selectedFile.name) formData.append('filename', selectedFile.name);
         if (secret) formData.append('secret', secret);
         formData.append('owner', username);
+        formData.append('file', selectedFile);
 
         const uploadResult = await apiService.uploadFileWithProgress(formData, (progress) => {
           setUploadProgress(progress);

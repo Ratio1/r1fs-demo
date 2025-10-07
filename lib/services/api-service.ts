@@ -1,5 +1,9 @@
 import { FilesData, TransferMode } from '@/lib/types';
 
+const OWNER_HEADER = 'x-ratio1-owner';
+const SECRET_HEADER = 'x-ratio1-secret';
+const FILENAME_HEADER = 'x-ratio1-filename';
+
 // Base API service class
 class ApiService {
   private async request<T>(
@@ -27,9 +31,11 @@ class ApiService {
   }
 
   async uploadFileStreaming(formData: FormData): Promise<any> {
+    const headers = this.extractUploadHeaders(formData);
     const response = await fetch('/api/upload', {
       method: 'POST',
       body: formData,
+      headers,
     });
 
     if (!response.ok) {
@@ -106,6 +112,11 @@ class ApiService {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/api/upload');
 
+      const headers = this.extractUploadHeaders(formData);
+      Object.entries(headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value);
+      });
+
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable && onProgress) {
           const progress = Math.round((e.loaded / e.total) * 100);
@@ -132,6 +143,37 @@ class ApiService {
 
       xhr.send(formData);
     });
+  }
+
+  private extractUploadHeaders(formData: FormData): Record<string, string> {
+    const headers: Record<string, string> = {};
+
+    const ownerValue = formData.get('owner');
+    if (typeof ownerValue === 'string' && ownerValue.trim()) {
+      headers[OWNER_HEADER] = ownerValue.trim();
+    }
+
+    const secretValue = formData.get('secret');
+    if (typeof secretValue === 'string' && secretValue.trim()) {
+      headers[SECRET_HEADER] = secretValue.trim();
+    }
+
+    const explicitFilename = formData.get('filename');
+    let filename: string | undefined;
+    if (typeof explicitFilename === 'string' && explicitFilename.trim()) {
+      filename = explicitFilename.trim();
+    } else {
+      const fileValue = formData.get('file');
+      if (fileValue instanceof File && fileValue.name) {
+        filename = fileValue.name;
+      }
+    }
+
+    if (filename) {
+      headers[FILENAME_HEADER] = filename;
+    }
+
+    return headers;
   }
 }
 

@@ -5,7 +5,11 @@ import {
   CStoreHashResponse,
   ChainStoreValue
 } from './types';
-import {createRatio1EdgeNodeBrowserClient} from '@ratio1/edge-node-client/browser';
+import createRatio1EdgeNodeClient from '@ratio1/edge-node-client';
+import { createRatio1EdgeNodeBrowserClient } from '@ratio1/edge-node-client/browser';
+import type { UploadFileRequest } from '@ratio1/edge-node-client/types';
+import FormDataNode from 'form-data';
+import crossFetch from 'cross-fetch';
 
 // Helper function to ensure URL has proper protocol
 function ensureHttpProtocol(url: string | undefined): string | undefined {
@@ -31,19 +35,19 @@ let parsed: string[] = [];
 if (fixed?.trim()) {
   try {
     const trimmed = fixed.trim();
-    
+
     // Remove outer single quotes if present
     let cleaned = trimmed;
     if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
       cleaned = trimmed.slice(1, -1);
     }
-    
+
     // Replace any remaining single quotes with double quotes
     cleaned = cleaned.replace(/'/g, '"');
-    
+
     // Parse the JSON string to get the actual array
     parsed = JSON.parse(cleaned);
-    
+
     if (config.DEBUG) {
       console.log('✅ [DEBUG] Successfully parsed CHAINSTORE_PEERS:', parsed);
     }
@@ -53,12 +57,26 @@ if (fixed?.trim()) {
     throw err;
   }
 }
-// Create the ratio1-edge-node-client instance
-const ratio1 = createRatio1EdgeNodeBrowserClient({
+const sharedClientOptions = {
   cstoreUrl: CSTORE_API_URL,
   r1fsUrl: R1FS_API_URL,
-  chainstorePeers: parsed as any
-});
+  chainstorePeers: parsed as any,
+  debug: config.DEBUG,
+  verbose: config.DEBUG,
+};
+
+const nodeHttpAdapter = {
+  fetch: (url: string, options?: RequestInit) => crossFetch(url, options as any),
+};
+
+// Create the ratio1-edge-node-client instance
+const ratio1 = typeof window === 'undefined'
+  ? createRatio1EdgeNodeClient({
+      ...sharedClientOptions,
+      httpAdapter: nodeHttpAdapter,
+      formDataCtor: FormDataNode as unknown as typeof FormData,
+    })
+  : createRatio1EdgeNodeBrowserClient(sharedClientOptions);
 
 // CSTORE API Client using ratio1-edge-node-client
 class CStoreApiClient {
@@ -273,14 +291,19 @@ class R1FSApiClient {
     }
   }
 
-  async uploadFileStreaming(formData: FormData): Promise<any> {
+  async uploadFileStreaming(request: UploadFileRequest): Promise<any> {
     if (config.DEBUG) {
-      console.log('🚀 [DEBUG] Uploading file via streaming...');
+      const debugMeta = {
+        hasFile: Boolean(request.file),
+        hasFormData: Boolean(request.formData),
+        filename: request.filename,
+        secretPresent: Boolean(request.secret && request.secret.trim()),
+      };
+      console.log('🚀 [DEBUG] Uploading file via streaming...', debugMeta);
     }
 
     try {
-      // The SDK expects an object with formData property
-      const result = await ratio1.r1fs.addFile({ formData }, {fullResponse: true});
+      const result = await ratio1.r1fs.addFile(request, { fullResponse: true });
 
       if (config.DEBUG) {
         console.log('✅ [DEBUG] File upload result:', result);
@@ -290,6 +313,15 @@ class R1FSApiClient {
     } catch (error) {
       if (config.DEBUG) {
         console.error('❌ [DEBUG] File upload error:', error);
+        const response = (error as any)?.response as Response | undefined;
+        if (response) {
+          try {
+            const body = await response.clone().text();
+            console.error('❌ [DEBUG] File upload error body:', body);
+          } catch (parseErr) {
+            console.error('❌ [DEBUG] Failed to read error body:', parseErr);
+          }
+        }
       }
       throw error;
     }
@@ -329,7 +361,7 @@ class R1FSApiClient {
       }
 
       // The SDK returns a Response object directly
-      return result;
+      return result as unknown as Response;
     } catch (error) {
       if (config.DEBUG) {
         console.error('❌ [DEBUG] File download error:', error);
@@ -383,8 +415,8 @@ export class ApiClient {
     return cstoreApi.getStatus();
   }
 
-  static async uploadFileStreaming(formData: FormData): Promise<any> {
-    return r1fsApi.uploadFileStreaming(formData);
+  static async uploadFileStreaming(request: UploadFileRequest): Promise<any> {
+    return r1fsApi.uploadFileStreaming(request);
   }
 
   static async uploadFileBase64(data: { file_base64_str: string; filename?: string; secret?: string }): Promise<any> {
