@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Switch } from '@headlessui/react';
-import { CloudIcon, CogIcon, CurrencyDollarIcon, SparklesIcon, UserIcon } from '@heroicons/react/24/outline';
+import { CloudIcon, CogIcon, CurrencyDollarIcon, SparklesIcon, UserIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { useStatus } from '@/lib/contexts/StatusContext';
 import { useToast } from '@/lib/contexts/ToastContext';
 import DualStatusWidget from './DualStatusWidget';
@@ -16,6 +18,31 @@ interface HeaderProps {
 export default function Header({ transferMode, onTransferModeChange, eeId, username }: HeaderProps) {
   const { r1fsStatus, cstoreStatus } = useStatus();
   const { showToast } = useToast();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sign out');
+      }
+
+      showToast('Signed out successfully.', 'success');
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Error signing out', error);
+      showToast('Unable to sign out. Try again.', 'error');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   // Extract ETH address from status data
   const getEthAddress = () => {
@@ -83,6 +110,15 @@ export default function Header({ transferMode, onTransferModeChange, eeId, usern
             {/* Dual Status Widget */}
             <DualStatusWidget />
 
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="inline-flex items-center space-x-2 rounded-xl bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <ArrowRightOnRectangleIcon className="h-4 w-4" />
+              <span>{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>
+            </button>
           </div>
         </div>
       </div>

@@ -40,6 +40,25 @@ function parseChainstorePeers(value: string | undefined): string[] {
   }
 }
 
+function parseMockUsers(value: string | undefined): Array<{ username: string; password: string }> {
+  const fallback = [{ username: 'demo', password: 'demo' }];
+  const raw = value?.trim();
+  if (!raw) {
+    return fallback;
+  }
+
+  const entries = raw.split(',').map((entry) => entry.trim()).filter(Boolean);
+  const parsed = entries.map((entry) => {
+    const [username, password] = entry.split(':');
+    if (!username || !password) {
+      throw new Error('AUTH_MOCK_USERS entries must be in the form username:password');
+    }
+    return { username: username.trim(), password: password.trim() };
+  });
+
+  return parsed.length > 0 ? parsed : fallback;
+}
+
 const cstoreApiUrl = ensureHttpProtocol(
   process.env.EE_CHAINSTORE_API_URL || process.env.CHAINSTORE_API_URL
 );
@@ -52,6 +71,8 @@ const chainstorePeers = parseChainstorePeers(
   process.env.EE_CHAINSTORE_PEERS || process.env.CHAINSTORE_PEERS
 );
 
+const authEnabled = process.env.AUTH_ENABLED === 'false' ? false : true;
+
 export const config = {
   HKEY: process.env.CSTORE_HKEY || 'ratio1-drive-test',
   DEBUG: rawDebug,
@@ -59,6 +80,12 @@ export const config = {
   cstoreApiUrl,
   r1fsApiUrl,
   chainstorePeers,
+  auth: {
+    enabled: authEnabled,
+    mockUsers: parseMockUsers(process.env.AUTH_MOCK_USERS),
+    sessionCookieName: process.env.AUTH_SESSION_COOKIE || 'r1-session',
+    sessionTtlSeconds: parseInt(process.env.AUTH_SESSION_TTL_SECONDS || '86400', 10),
+  },
 } as const;
 
 export type Config = typeof config;

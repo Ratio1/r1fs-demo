@@ -1,19 +1,39 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The Next.js App Router lives under `app/` with `app/file/[cid]/` handling per-file routes and `app/api/` exposing edge-friendly API handlers. Shared UI resides in `components/`, each exported as a focused React component. Business logic and service helpers sit under `lib/`, including `lib/services/` for network calls and `lib/config.ts` for environment wiring. Mock Ratio1 services for offline development live in `mock-services/`, while Docker definitions, setup scripts, and config files remain at the repository root.
+- `app/` hosts the Next.js App Router; feature routes live under `app/file/[cid]/` and APIs under `app/api/` to stay edge-friendly.
+- Shared UI is in `components/`, each exporting a focused React component; cross-cutting utilities live in `lib/` with network helpers scoped to `lib/services/` and environment wiring in `lib/config.ts`.
+- Local mock integrations reside in `mock-services/`; Dockerfiles, scripts (for example `setup-dev.sh`), and configuration stay at the repository root for quick discovery.
 
 ## Build, Test, and Development Commands
-Run `npm install` once per machine. `npm run dev` starts the Next.js dev server on port 3333 with hot reload. `npm run build` executes the production compiler and type checks the project. `npm run lint` applies the Next.js ESLint ruleset; resolve warnings before committing. For container workflows, `docker-compose up -d` brings up the app alongside the bundled mock services.
+- `npm run dev` boots the dev server on port 3333 with hot reload against mock services.
+- `npm run build` runs the production compiler and full TypeScript check.
+- `npm run lint` applies the Next.js ESLint preset; resolve every warning before committing.
+- `docker-compose up -d` brings up the app with bundled mock Ratio1 services for container workflows.
 
 ## Coding Style & Naming Conventions
-TypeScript and JSX files use 2-space indentation. Export React components with PascalCase filenames (for example, `StatusModal.tsx`) and keep hooks or utilities camelCase. Keep environment-sensitive logic centralized in `lib/config.ts`. Prefer Tailwind utility classes inside `app/**/*.tsx`, falling back to `app/globals.css` only for shared styling primitives. Always run `npm run lint` before pushing; the repo relies on the built-in Next.js ESLint preset.
+- Use 2-space indentation across TypeScript, JSX, and configuration files.
+- Export React components from PascalCase files such as `StatusModal.tsx`; keep hooks and utilities camelCase.
+- Prefer Tailwind classes within `app/**/*.tsx`; reserve `app/globals.css` for shared primitives.
+- Centralize environment toggles in `lib/config.ts` and avoid scattering `process.env` reads.
 
 ## Testing Guidelines
-Automated tests are not yet established. Before opening a PR, run `npm run lint`, exercise the core flows (upload, download, status widgets) against the mock services, and capture any remaining manual test steps in the PR. When adding automated coverage, colocate specs beside the source file with a `.test.ts` suffix and ensure they run headlessly in CI.
+- Automated coverage is still forming; prioritize `npm run lint` plus manual validation of upload, download, and status flows against the mock services.
+- Co-locate new automated specs beside their source with a `.test.ts` suffix and ensure they can execute headlessly in CI when added.
+- Document manual verification steps in PR descriptions until we add formal test suites.
 
 ## Commit & Pull Request Guidelines
-Commits follow Conventional Commits (`feat:`, `fix:`, `chore:`) as reflected in recent history (`fix: retrieve chainstore peers server-side`). Prefer small, scoped commits with descriptive bodies when context is non-obvious. PRs should include: a concise summary, links to related issues or tickets, screenshots or logs for UI/API changes, and notes on manual verification plus relevant environment variables. Request maintainer review before merging.
+- Follow Conventional Commits such as `feat:`, `fix:`, and `chore:`; keep commits small and descriptive when context is not obvious.
+- PRs must include a concise summary, linked issues or tickets, relevant screenshots or logs for UI/API updates, and notes on manual verification plus required environment variables.
+- Request review from a maintainer before merging and confirm all lint and build checks succeed locally.
 
-## Environment & Security Notes
-Copy `.env.example` to `.env.local` and adjust keys referenced in `README.md` (`EE_CHAINSTORE_API_URL`, `EE_R1FS_API_URL`, `CSTORE_HKEY`, etc.). Never commit secrets; rely on GitHub Actions secrets for Docker publishing. For a local edge simulation, run `setup-dev.sh` to bootstrap supporting services and keep confidential configs outside version control.
+## Security & Configuration Tips
+- Copy `.env.example` to `.env.local`; configure keys like `EE_CHAINSTORE_API_URL`, `EE_R1FS_API_URL`, and `CSTORE_HKEY` per README instructions.
+- Toggle mock authentication with `AUTH_ENABLED` (default true), `AUTH_MOCK_USERS` (`user:pass` pairs), and optional `AUTH_SESSION_COOKIE` or `AUTH_SESSION_TTL_SECONDS` overrides.
+- Never commit secrets or generated `.env*` files; rely on GitHub Actions secrets when publishing Docker images.
+- Use `setup-dev.sh` to bootstrap the local edge simulation while keeping confidential configs outside version control.
+
+## Authentication Workflow
+- Navigate to `/login` for the mocked credential flow; successful POSTs to `/api/auth/login` issue the `r1-session` cookie and redirect back to the requested page.
+- Call `POST /api/auth/logout` to clear the mock session; the header logout button already wires this endpoint.
+- Middleware enforces auth on app routes, redirecting unauthenticated GET requests to `/login` and allowing a local override via the `x-mock-auth: allow` header for scripted testing.
