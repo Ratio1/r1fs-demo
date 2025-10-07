@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiClient } from '@/lib/api-client';
+import { getRatio1NodeClient } from '@/lib/ratio1-client';
+
+function getR1FSClient() {
+  return getRatio1NodeClient().r1fs;
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const cid = searchParams.get('cid');
-    const secret = searchParams.get('secret');
+    const secret = searchParams.get('secret') || undefined;
     const mode = searchParams.get('mode') || 'streaming';
 
     if (!cid) {
@@ -15,19 +19,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (mode === 'streaming') {
-      const response = await ApiClient.downloadFileStreaming(cid, secret || undefined);
+    const r1fs = getR1FSClient();
 
-      // Forward the response directly without buffering
+    if (mode === 'streaming') {
+      const response = await r1fs.getFile({ cid, secret });
+
       return new NextResponse(response.body, {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
       });
-    } else {
-      const result = await ApiClient.downloadFileBase64(cid, secret || undefined);
-      return NextResponse.json(result);
     }
+
+    const result = await (r1fs as any).getFileBase64(cid, secret);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error downloading file:', error);
     return NextResponse.json(
@@ -37,7 +42,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Keep POST for backward compatibility
 export async function POST(request: NextRequest) {
   try {
     const { cid, secret, mode } = await request.json();
@@ -49,20 +53,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (mode === 'streaming') {
-      const response = await ApiClient.downloadFileStreaming(cid, secret);
+    const r1fs = getR1FSClient();
 
-      // Forward the response directly without buffering
-      // This enables true streaming from r1fs to the client
+    if (mode === 'streaming') {
+      const response = await r1fs.getFile({ cid, secret });
+
       return new NextResponse(response.body, {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
       });
-    } else {
-      const result = await ApiClient.downloadFileBase64(cid, secret);
-      return NextResponse.json(result);
     }
+
+    const result = await (r1fs as any).getFileBase64(cid, secret);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error downloading file:', error);
     return NextResponse.json(

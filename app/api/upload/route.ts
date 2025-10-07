@@ -1,8 +1,8 @@
 import Busboy from 'busboy';
 import { PassThrough, Readable } from 'node:stream';
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiClient } from '@/lib/api-client';
 import { config } from '@/lib/config';
+import { getRatio1NodeClient } from '@/lib/ratio1-client';
 import { FileMetadata } from '@/lib/types';
 
 const OWNER_HEADER = 'x-ratio1-owner';
@@ -12,6 +12,10 @@ const FILENAME_HEADER = 'x-ratio1-filename';
 export const runtime = 'nodejs';
 
 type NullableString = string | undefined | null;
+
+type Ratio1Client = ReturnType<typeof getRatio1NodeClient>;
+type R1fsClient = Ratio1Client['r1fs'];
+type CstoreClient = Ratio1Client['cstore'];
 
 interface MultipartMetadata {
   filename?: string;
@@ -47,7 +51,11 @@ function toError(value: unknown): Error {
   }
 }
 
-async function handleStreamingUpload(request: NextRequest, metadata: MultipartMetadata): Promise<MultipartResult> {
+async function handleStreamingUpload(
+  request: NextRequest,
+  metadata: MultipartMetadata,
+  r1fs: R1fsClient
+): Promise<MultipartResult> {
   const contentType = request.headers.get('content-type');
   if (!contentType?.includes('multipart/form-data')) {
     throw new Error('Invalid content-type for streaming upload');
@@ -95,12 +103,15 @@ async function handleStreamingUpload(request: NextRequest, metadata: MultipartMe
       const passThrough = new PassThrough();
       file.pipe(passThrough);
 
-      uploadPromise = ApiClient.uploadFileStreaming({
-        file: passThrough,
-        filename: filename || info?.filename,
-        secret: secret || undefined,
-        nonce,
-      });
+      uploadPromise = r1fs.addFile(
+        {
+          file: passThrough,
+          filename: filename || info?.filename,
+          secret: secret || undefined,
+          nonce,
+        },
+        { fullResponse: true }
+      );
 
       uploadPromise.catch((error) => {
         const err = toError(error);
@@ -170,6 +181,10 @@ async function handleStreamingUpload(request: NextRequest, metadata: MultipartMe
 
 export async function POST(request: NextRequest) {
   try {
+    const ratio1 = getRatio1NodeClient();
+    const r1fs = ratio1.r1fs;
+    const cstore = ratio1.cstore;
+
     const contentType = request.headers.get('content-type');
     let uploadResult;
     let filename = '';
@@ -182,7 +197,7 @@ export async function POST(request: NextRequest) {
         filename: request.headers.get(FILENAME_HEADER) || undefined,
         owner: request.headers.get(OWNER_HEADER) || undefined,
         secret: request.headers.get(SECRET_HEADER) || undefined,
-      });
+      }, r1fs);
 
       uploadResult = streamingResult.uploadResult;
       filename = streamingResult.filename || 'unknown';
@@ -195,7 +210,7 @@ export async function POST(request: NextRequest) {
       secret = data.secret || '';
       owner = data.owner || '';
       nonce = parseNonce(data.nonce);
-      uploadResult = await ApiClient.uploadFileBase64(data);
+      uploadResult = await r1fs.addFileBase64(data, { fullResponse: true });
     }
 
     const cid = uploadResult?.result?.cid;
@@ -207,14 +222,12 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const hashGetResult = await ApiClient.hashGet(config.HKEY, eeNodeAddress);
+      const existing = await cstore.hget({ hkey: config.HKEY, key: eeNodeAddress });
       let metadataArray: FileMetadata[] = [];
 
-      if (hashGetResult === null || hashGetResult === undefined) {
-        metadataArray = [];
-      } else {
+      if (existing !== null && existing !== undefined) {
         try {
-          const parsed = JSON.parse(hashGetResult);
+          const parsed = JSON.parse(existing as string);
           if (Array.isArray(parsed)) {
             if (typeof parsed[0] === 'string') {
               metadataArray = parsed.map((existingCid: string) => ({
@@ -242,14 +255,18 @@ export async function POST(request: NextRequest) {
         isEncryptedWithCustomKey: !!(secret && secret.trim()),
       };
 
-      const existingIndex = metadataArray.findIndex(item => item.cid === cid);
+      const existingIndex = metadataArray.findIndex((item) => item.cid === cid);
       if (existingIndex === -1) {
         metadataArray.push(newMetadata);
       } else {
         metadataArray[existingIndex] = newMetadata;
       }
 
-      await ApiClient.hashSet(config.HKEY, eeNodeAddress, JSON.stringify(metadataArray));
+      await cstore.hset({
+        hkey: config.HKEY,
+        key: eeNodeAddress,
+        value: JSON.stringify(metadataArray),
+      });
     } catch (hashError) {
       console.error('Error updating hash store:', hashError);
     }

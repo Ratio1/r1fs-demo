@@ -120,10 +120,12 @@ ratio1-drive/
 │   └── page.tsx           # Main application page
 ├── components/             # React components
 ├── lib/                    # Shared libraries
-│   ├── api-client.ts      # API client implementation
-│   ├── config.ts          # Configuration management
+│   ├── config.ts          # Environment-aware configuration
+│   ├── ratio1-client.ts   # Ratio1 SDK singleton initialiser
 │   ├── contexts/          # React contexts
-│   └── services/          # Service layer
+│   ├── services/          # Client-side fetch helpers
+│   ├── api-logger.ts      # API logging utilities
+│   └── types.ts           # Shared domain types
 ├── mock-services/          # Mock services for development
 └── Dockerfile             # Container configuration
 ```
