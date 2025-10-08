@@ -72,6 +72,11 @@ docker run -p 3333:3333 \
 - `EE_CHAINSTORE_API_URL`: URL for the CStore API service (default: `http://localhost:30000`)
 - `EE_R1FS_API_URL`: URL for the R1FS API service (default: `http://localhost:30001`)
 - `CSTORE_HKEY`: Hash key for CStore operations (default: `ratio1-drive-test`)
+- `AUTH_SESSION_COOKIE`: Session cookie name (default: `r1-session`)
+- `AUTH_SESSION_TTL_SECONDS`: Session lifetime in seconds (default: `86400`)
+- `EE_CSTORE_AUTH_HKEY`: CStore hash that stores credential records (no default)
+- `EE_CSTORE_AUTH_SECRET`: Server-side pepper mixed into password hashes (no default)
+- `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`: One-time password used to bootstrap the `admin` account (optional after the admin user exists)
 - `NODE_ENV`: Node.js environment (default: `production`)
 - `NEXT_TELEMETRY_DISABLED`: Disable Next.js telemetry (default: `1`)
 - `MAX_FILE_SIZE_MB`: Maximum file size in MB (default: `10`)
@@ -137,5 +142,6 @@ ratio1-drive/
 - **TypeScript 5.8.3**: Type safety
 - **Tailwind CSS 4.1.11**: Styling
 - **ratio1-edge-node-client 1.0.0**: Ratio1 Edge Network SDK
+- **@ratio1/cstore-auth-ts**: CStore-backed authentication helper
 - **Docker**: Containerization
 - **GitHub Actions**: CI/CD automation

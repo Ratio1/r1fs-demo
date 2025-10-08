@@ -168,7 +168,7 @@ export default function UploadSuccessModal({ isOpen, onClose, cid, filename, isE
                   <div>
                     <p className="text-sm font-medium text-purple-800">How it works</p>
                     <p className="text-xs text-purple-600">
-                      When someone visits this link, they'll see a download modal where they can retrieve your file.
+                      When someone visits this link, they&rsquo;ll see a download modal where they can retrieve your file.
                     </p>
                   </div>
                 </div>

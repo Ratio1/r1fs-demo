@@ -6,7 +6,6 @@ import Header from '@/components/Header';
 import FileList from '@/components/FileList';
 import UploadModal from '@/components/UploadModal';
 import UploadSuccessModal from '@/components/UploadSuccessModal';
-import UsernameModal from '@/components/UsernameModal';
 import ToastContainer from '@/components/Toast';
 import { FilesData, TransferMode } from '@/lib/types';
 import { useEeId } from '@/lib/contexts/StatusContext';
@@ -25,7 +24,7 @@ export default function Home() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const eeId = useEeId();
-  const { username, isUserSet, setUsername } = useUser();
+  const { username, isUserSet } = useUser();
 
   useEffect(() => {
     // Only fetch files in the browser, not during build
@@ -58,10 +57,6 @@ export default function Home() {
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
     setUploadSuccessData(null);
-  };
-
-  const handleUsernameSet = (newUsername: string) => {
-    setUsername(newUsername);
   };
 
   if (isLoading) {
@@ -184,13 +179,6 @@ export default function Home() {
             isEncryptedWithCustomKey={uploadSuccessData.isEncrypted}
           />
         )}
-
-        {/* Username Modal */}
-        <UsernameModal
-          isOpen={!isUserSet}
-          onClose={() => {}} // Cannot close without setting username
-          onUsernameSet={handleUsernameSet}
-        />
       </main>
 
       {/* Enhanced Footer */}

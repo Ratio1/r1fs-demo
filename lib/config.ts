@@ -52,6 +52,12 @@ const chainstorePeers = parseChainstorePeers(
   process.env.EE_CHAINSTORE_PEERS || process.env.CHAINSTORE_PEERS
 );
 
+const authSessionCookieName = process.env.AUTH_SESSION_COOKIE || 'r1-session';
+const authSessionTtlSeconds = parseInt(process.env.AUTH_SESSION_TTL_SECONDS || '86400', 10);
+const cstoreAuthHkey = process.env.EE_CSTORE_AUTH_HKEY;
+const cstoreAuthSecret = process.env.EE_CSTORE_AUTH_SECRET;
+const cstoreBootstrapAdminPass = process.env.EE_CSTORE_BOOTSTRAP_ADMIN_PASS ?? null;
+
 export const config = {
   HKEY: process.env.CSTORE_HKEY || 'ratio1-drive-test',
   DEBUG: rawDebug,
@@ -59,6 +65,15 @@ export const config = {
   cstoreApiUrl,
   r1fsApiUrl,
   chainstorePeers,
+  auth: {
+    sessionCookieName: authSessionCookieName,
+    sessionTtlSeconds: authSessionTtlSeconds,
+    cstore: {
+      hkey: cstoreAuthHkey,
+      secret: cstoreAuthSecret,
+      bootstrapAdminPassword: cstoreBootstrapAdminPass,
+    },
+  },
 } as const;
 
 export type Config = typeof config;
