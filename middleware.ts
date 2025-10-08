@@ -44,54 +44,52 @@ export function middleware(request: NextRequest) {
     timestamp: requestTimestamp,
   });
 
-  if (appConfig.auth.enabled) {
-    const { pathname } = request.nextUrl;
-    const sessionCookieValue = request.cookies.get(appConfig.auth.sessionCookieName)?.value;
-    const session = readSessionFromCookie(sessionCookieValue);
-    const mockBypass = request.headers.get('x-mock-auth') === 'allow';
-    const acceptsHTML = request.headers.get('accept')?.includes('text/html') ?? false;
-    const publicPath = isPublicPath(pathname);
+  const { pathname } = request.nextUrl;
+  const sessionCookieValue = request.cookies.get(appConfig.auth.sessionCookieName)?.value;
+  const session = readSessionFromCookie(sessionCookieValue);
+  const mockBypass = request.headers.get('x-mock-auth') === 'allow';
+  const acceptsHTML = request.headers.get('accept')?.includes('text/html') ?? false;
+  const publicPath = isPublicPath(pathname);
 
-    if (!session && !mockBypass && !publicPath) {
-      if (request.method === 'GET' && acceptsHTML) {
-        const loginUrl = request.nextUrl.clone();
-        loginUrl.pathname = '/login';
+  if (!session && !mockBypass && !publicPath) {
+    if (request.method === 'GET' && acceptsHTML) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = '/login';
 
-        const destination = `${pathname}${request.nextUrl.search}`;
-        if (destination && destination !== '/login') {
-          loginUrl.searchParams.set('redirectTo', destination);
-        }
-
-        console.warn('[auth] Redirecting unauthenticated request', {
-          url: request.url,
-          destination: loginUrl.toString(),
-        });
-
-        return logResponse(NextResponse.redirect(loginUrl), request, start);
+      const destination = `${pathname}${request.nextUrl.search}`;
+      if (destination && destination !== '/login') {
+        loginUrl.searchParams.set('redirectTo', destination);
       }
 
-      console.warn('[auth] Unauthorized request blocked', {
+      console.warn('[auth] Redirecting unauthenticated request', {
         url: request.url,
-        method: request.method,
-        hasCookie: Boolean(sessionCookieValue),
+        destination: loginUrl.toString(),
       });
 
-      return logResponse(
-        NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }),
-        request,
-        start
-      );
+      return logResponse(NextResponse.redirect(loginUrl), request, start);
     }
 
-    if (session && publicPath && pathname === '/login') {
-      const homeUrl = request.nextUrl.clone();
-      homeUrl.pathname = '/';
-      homeUrl.search = '';
+    console.warn('[auth] Unauthorized request blocked', {
+      url: request.url,
+      method: request.method,
+      hasCookie: Boolean(sessionCookieValue),
+    });
 
-      return logResponse(NextResponse.redirect(homeUrl), request, start, {
-        reason: 'already-authenticated',
-      });
-    }
+    return logResponse(
+      NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }),
+      request,
+      start
+    );
+  }
+
+  if (session && publicPath && pathname === '/login') {
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = '/';
+    homeUrl.search = '';
+
+    return logResponse(NextResponse.redirect(homeUrl), request, start, {
+      reason: 'already-authenticated',
+    });
   }
 
   const response = NextResponse.next();

@@ -52,7 +52,7 @@ export default function LoginPage() {
             R1
           </div>
           <h1 className="mt-4 text-2xl font-semibold text-gray-900">Sign in to Ratio1 Drive</h1>
-          <p className="mt-2 text-sm text-gray-600">Use your mock credentials to continue.</p>
+          <p className="mt-2 text-sm text-gray-600">Use your Ratio1 credentials to continue.</p>
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -67,7 +67,7 @@ export default function LoginPage() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               className="mt-1 block w-full rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-              placeholder="demo"
+              placeholder="admin"
               required
             />
           </div>
@@ -84,7 +84,7 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="mt-1 block w-full rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-              placeholder="demo"
+              placeholder="******"
               required
             />
           </div>

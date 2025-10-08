@@ -2,6 +2,7 @@ import { config } from '../config';
 
 export type SessionPayload = {
   username: string;
+  role?: 'admin' | 'user';
   issuedAt: number;
 };
 
@@ -36,9 +37,20 @@ function decodeSession(value: string | undefined): SessionPayload | null {
       return null;
     }
 
+    let role: 'admin' | 'user' | undefined;
+
+    if ('role' in parsed) {
+      if (parsed.role === 'admin' || parsed.role === 'user') {
+        role = parsed.role;
+      } else {
+        return null;
+      }
+    }
+
     return {
       username: parsed.username,
       issuedAt: parsed.issuedAt,
+      role,
     };
   } catch (error) {
     console.warn('Failed to decode session cookie', error);
@@ -51,11 +63,12 @@ export function isSessionExpired(payload: SessionPayload, now: number = Date.now
   return ageSeconds > SESSION_TTL_SECONDS;
 }
 
-export function createSessionCookie(username: string): SessionCookie {
+export function createSessionCookie(username: string, role?: 'admin' | 'user'): SessionCookie {
   const issuedAt = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     username,
     issuedAt,
+    ...(role ? { role } : {}),
   };
 
   return {

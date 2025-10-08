@@ -29,11 +29,10 @@
 
 ## Security & Configuration Tips
 - Copy `.env.example` to `.env.local`; configure keys like `EE_CHAINSTORE_API_URL`, `EE_R1FS_API_URL`, and `CSTORE_HKEY` per README instructions.
-- Toggle mock authentication with `AUTH_ENABLED` (default true), `AUTH_MOCK_USERS` (`user:pass` pairs), and optional `AUTH_SESSION_COOKIE` or `AUTH_SESSION_TTL_SECONDS` overrides.
+- Configure authentication with `EE_CSTORE_AUTH_HKEY`, `EE_CSTORE_AUTH_SECRET`, optional `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`, plus cookie tweaks via `AUTH_SESSION_COOKIE` or `AUTH_SESSION_TTL_SECONDS`.
 - Never commit secrets or generated `.env*` files; rely on GitHub Actions secrets when publishing Docker images.
 - Use `setup-dev.sh` to bootstrap the local edge simulation while keeping confidential configs outside version control.
 
-## Authentication Workflow
-- Navigate to `/login` for the mocked credential flow; successful POSTs to `/api/auth/login` issue the `r1-session` cookie and redirect back to the requested page.
-- Call `POST /api/auth/logout` to clear the mock session; the header logout button already wires this endpoint.
+- Navigate to `/login` for the credential flow backed by `@ratio1/cstore-auth-ts`; successful POSTs to `/api/auth/login` issue the `r1-session` cookie and redirect back to the requested page.
+- Call `POST /api/auth/logout` to clear the session; the header logout button already wires this endpoint.
 - Middleware enforces auth on app routes, redirecting unauthenticated GET requests to `/login` and allowing a local override via the `x-mock-auth: allow` header for scripted testing.
