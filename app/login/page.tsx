@@ -8,6 +8,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -76,17 +77,28 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700" htmlFor="password">
               Password
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="mt-1 block w-full rounded-xl border border-gray-300 px-4 py-3 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-              placeholder="******"
-              required
-            />
+            <div className="mt-1 relative">
+              <input
+                id="password"
+                name="password"
+                type={isPasswordVisible ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="block w-full rounded-xl border border-gray-300 px-4 py-3 pr-16 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                placeholder="********"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible((prev) => !prev)}
+                className="absolute inset-y-0 right-3 flex items-center text-sm font-medium text-purple-600"
+                aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+                aria-pressed={isPasswordVisible}
+              >
+                {isPasswordVisible ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
 
           {error && (
