@@ -16,6 +16,7 @@ type CreateUserPayload = {
   password?: unknown;
   role?: unknown;
   metadata?: unknown;
+  maxAllowedFiles?: unknown;
 };
 
 type BasicUser = PublicUser<Record<string, unknown>>;
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { username, password, role, metadata } = payload;
+  const { username, password, role, metadata, maxAllowedFiles } = payload;
 
   if (typeof username !== 'string' || typeof password !== 'string') {
     return NextResponse.json<CreateUserResponse>(
@@ -84,7 +85,27 @@ export async function POST(request: Request) {
     }
   }
 
-  const metadataValue = isPlainObject(metadata) ? metadata : undefined;
+  const metadataCandidate = isPlainObject(metadata) ? metadata : undefined;
+  const rawMaxAllowed =
+    maxAllowedFiles !== undefined
+      ? maxAllowedFiles
+      : metadataCandidate?.maxAllowedFiles;
+
+  let metadataValue: { maxAllowedFiles: number } | undefined;
+
+  if (rawMaxAllowed !== undefined) {
+    const parsed =
+      typeof rawMaxAllowed === 'number' ? rawMaxAllowed : Number(rawMaxAllowed);
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return NextResponse.json<CreateUserResponse>(
+        { success: false, error: 'Max allowed files must be a positive number' },
+        { status: 400 }
+      );
+    }
+
+    metadataValue = { maxAllowedFiles: Math.floor(parsed) };
+  }
 
   const client = getAuthClient();
 

@@ -9,6 +9,7 @@ import {
 	KeyIcon,
 	ChevronUpDownIcon,
 	CheckIcon,
+	FolderPlusIcon,
 } from "@heroicons/react/24/outline";
 
 type UserRole = "admin" | "user";
@@ -16,7 +17,11 @@ type UserRole = "admin" | "user";
 interface CreateUserModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSuccess?: (payload: { username: string; role: UserRole }) => void;
+	onSuccess?: (payload: {
+		username: string;
+		role: UserRole;
+		maxAllowedFiles?: number;
+	}) => void;
 	onError?: (message: string) => void;
 }
 
@@ -31,6 +36,7 @@ export default function CreateUserModal({
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [role, setRole] = useState<UserRole>("user");
+	const [maxAllowedFiles, setMaxAllowedFiles] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,6 +44,7 @@ export default function CreateUserModal({
 		setUsername("");
 		setPassword("");
 		setRole("user");
+		setMaxAllowedFiles("");
 		setError(null);
 		setIsSubmitting(false);
 	};
@@ -50,26 +57,47 @@ export default function CreateUserModal({
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
 
-		if (!username.trim() || !password.trim()) {
+		const trimmedUsername = username.trim();
+		const trimmedPassword = password.trim();
+
+		if (!trimmedUsername || !trimmedPassword) {
 			setError("Username and password are required.");
 			return;
+		}
+
+		let metadataPayload: { maxAllowedFiles: number } | undefined;
+		const trimmedMaxAllowed = maxAllowedFiles.trim();
+
+		if (trimmedMaxAllowed) {
+			const parsed = Number(trimmedMaxAllowed);
+			if (!Number.isFinite(parsed) || parsed <= 0) {
+				setError("Max allowed files must be a positive number.");
+				return;
+			}
+			metadataPayload = { maxAllowedFiles: Math.floor(parsed) };
 		}
 
 		setIsSubmitting(true);
 		setError(null);
 
 		try {
+			const body: Record<string, unknown> = {
+				username: trimmedUsername,
+				password: trimmedPassword,
+				role,
+			};
+
+			if (metadataPayload) {
+				body.metadata = metadataPayload;
+			}
+
 			const response = await fetch("/api/users", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
 				credentials: "include",
-				body: JSON.stringify({
-					username: username.trim(),
-					password: password.trim(),
-					role,
-				}),
+				body: JSON.stringify(body),
 			});
 
 			const payload = await response.json();
@@ -84,6 +112,7 @@ export default function CreateUserModal({
 			onSuccess?.({
 				username: payload.user.username,
 				role: payload.user.role,
+				maxAllowedFiles: payload.user.metadata?.maxAllowedFiles,
 			});
 			handleClose();
 		} catch (submitError) {
@@ -171,6 +200,27 @@ export default function CreateUserModal({
 							<p className="text-xs text-gray-500 mt-2">
 								Password must meet organization security
 								requirements.
+							</p>
+						</div>
+
+						<div>
+							<label className="block text-sm font-semibold text-gray-700 mb-2">
+								Max allowed files
+							</label>
+							<input
+								type="number"
+								min={1}
+								value={maxAllowedFiles}
+								onChange={(event) =>
+									setMaxAllowedFiles(event.target.value)
+								}
+								className="input-field pl-10"
+								placeholder="Unlimited"
+								disabled={isSubmitting}
+							/>
+							<p className="text-xs text-gray-500 mt-2">
+								Leave blank for no limit. Enter a positive
+								number to cap file ownership.
 							</p>
 						</div>
 

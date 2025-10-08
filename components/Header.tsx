@@ -59,8 +59,16 @@ export default function Header({
 	const handleCreateUserSuccess = (createdUser: {
 		username: string;
 		role: "admin" | "user";
+		maxAllowedFiles?: number;
 	}) => {
-		showToast(`Created user ${createdUser.username}`, "success");
+		const limitText =
+			createdUser.maxAllowedFiles !== undefined
+				? ` (max files: ${createdUser.maxAllowedFiles})`
+				: "";
+		showToast(
+			`Created user ${createdUser.username}${limitText}`,
+			"success"
+		);
 	};
 
 	const handleCreateUserError = (message: string) => {
