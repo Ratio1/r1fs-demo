@@ -69,18 +69,40 @@ docker run -p 3333:3333 \
 
 ### Environment Variables
 
+#### Required for Authentication
+
+These variables are **required** for the authentication system to work:
+
+- `EE_CSTORE_AUTH_HKEY`: CStore hash key that stores user credential records (e.g., `auth` or `my-app-auth`)
+- `EE_CSTORE_AUTH_SECRET`: Server-side pepper/secret mixed into password hashes (e.g., a long random string)
+
+#### Required for First-Time Setup
+
+- `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`: Password to bootstrap the initial `admin` account on first run (optional after admin user exists)
+
+#### Service URLs
+
 - `EE_CHAINSTORE_API_URL`: URL for the CStore API service (default: `http://localhost:30000`)
+  - Alternative: `CHAINSTORE_API_URL`
 - `EE_R1FS_API_URL`: URL for the R1FS API service (default: `http://localhost:30001`)
-- `CSTORE_HKEY`: Hash key for CStore operations (default: `ratio1-drive-test`)
+  - Alternative: `R1FS_API_URL`
+
+#### Storage Configuration
+
+- `CSTORE_HKEY`: Hash key for CStore file metadata operations (default: `ratio1-drive-test`)
+
+#### Session Configuration
+
 - `AUTH_SESSION_COOKIE`: Session cookie name (default: `r1-session`)
-- `AUTH_SESSION_TTL_SECONDS`: Session lifetime in seconds (default: `86400`)
-- `EE_CSTORE_AUTH_HKEY`: CStore hash that stores credential records (no default)
-- `EE_CSTORE_AUTH_SECRET`: Server-side pepper mixed into password hashes (no default)
-- `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`: One-time password used to bootstrap the `admin` account (optional after the admin user exists)
-- `NODE_ENV`: Node.js environment (default: `production`)
-- `NEXT_TELEMETRY_DISABLED`: Disable Next.js telemetry (default: `1`)
-- `MAX_FILE_SIZE_MB`: Maximum file size in MB (default: `10`)
+- `AUTH_SESSION_TTL_SECONDS`: Session lifetime in seconds (default: `86400` = 24 hours)
+
+#### Optional Configuration
+
+- `MAX_FILE_SIZE_MB`: Maximum file upload size in MB (default: `10`)
 - `DEBUG`: Enable debug logging (default: `false`)
+- `NODE_ENV`: Node.js environment (`development` or `production`)
+- `NEXT_TELEMETRY_DISABLED`: Disable Next.js telemetry (default: `1`)
+- `EE_CHAINSTORE_PEERS`: JSON array of additional CStore peer URLs (optional)
 
 ## Docker Compose
 
@@ -94,12 +116,42 @@ This will start the application on port 3333 with the default environment config
 
 ## Local Development
 
+### Quick Start
+
+1. **Create `.env.local` file** in the project root:
+
+```bash
+# Required - Authentication
+EE_CSTORE_AUTH_HKEY=auth
+EE_CSTORE_AUTH_SECRET=your-long-random-secret-here
+
+# Required - First time setup (creates admin user)
+EE_CSTORE_BOOTSTRAP_ADMIN_PASS=admin
+
+# Service URLs
+EE_CHAINSTORE_API_URL=http://localhost:51234
+EE_R1FS_API_URL=http://localhost:51235
+
+# Storage
+CSTORE_HKEY=ratio1-drive-dev
+```
+
+2. **Install dependencies and start**:
+
 ```bash
 npm install
 npm run dev
 ```
 
-The development server will start on port 3333.
+The development server will start on `http://localhost:3333`.
+
+### First Time Login
+
+On first run with `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` set, an admin user will be created:
+- **Username**: `admin`
+- **Password**: (value of `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`)
+
+After the first login, you can remove `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` from `.env.local`.
 
 ## Building Locally
 
