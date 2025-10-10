@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/lib/contexts/ToastContext";
 import CreateUserModal from "@/components/CreateUserModal";
 import EditUserModal from "@/components/EditUserModal";
+import Loader from "@/components/Loader";
 
 interface User {
   username: string;
@@ -34,8 +35,15 @@ interface UsersResponse {
   error?: string;
 }
 
+interface UserStatsResponse {
+  success: boolean;
+  stats?: Record<string, { fileCount: number }>;
+  error?: string;
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [userStats, setUserStats] = useState<Record<string, { fileCount: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
@@ -48,27 +56,36 @@ export default function UsersPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch("/api/users", {
-        method: "GET",
-        credentials: "include",
-      });
+      
+      // Fetch users and stats in parallel
+      const [usersResponse, statsResponse] = await Promise.all([
+        fetch("/api/users", {
+          method: "GET",
+          credentials: "include",
+        }),
+        fetch("/api/users/stats", {
+          method: "GET",
+          credentials: "include",
+        }),
+      ]);
 
-      const data: UsersResponse = await response.json();
+      const usersData: UsersResponse = await usersResponse.json();
+      const statsData: UserStatsResponse = await statsResponse.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Failed to fetch users");
+      if (!usersResponse.ok || !usersData.success) {
+        throw new Error(usersData.error || "Failed to fetch users");
       }
 
-      setUsers(data.users || []);
+      setUsers(usersData.users || []);
+      setUserStats(statsData.stats || {});
     } catch (error) {
       console.error("Error fetching users:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch users";
       setError(errorMessage);
-      showToast(errorMessage, "error");
     } finally {
       setIsLoading(false);
     }
-  }, [showToast]);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -91,10 +108,6 @@ export default function UsersPage() {
     fetchUsers();
   };
 
-  const handleCreateUserError = (message: string) => {
-    showToast(message, "error");
-  };
-
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setIsEditUserOpen(true);
@@ -115,10 +128,6 @@ export default function UsersPage() {
     );
     // Refresh the users list
     fetchUsers();
-  };
-
-  const handleEditUserError = (message: string) => {
-    showToast(message, "error");
   };
 
   const formatDate = (dateString: string) => {
@@ -147,16 +156,12 @@ export default function UsersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 rounded-full border-2 border-ratio1-500 border-t-transparent animate-spin" />
-              <span className="text-lg text-gray-600">Loading users...</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Loader 
+        text="Loading users..."
+        subtext="Fetching user data and quota information"
+        size="lg"
+        fullScreen
+      />
     );
   }
 
@@ -327,9 +332,7 @@ export default function UsersPage() {
                               {user.username}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {user.metadata?.maxAllowedFiles !== undefined
-                                ? `${user.metadata.maxAllowedFiles} files max`
-                                : "Unlimited files"}
+                              {userStats[user.username]?.fileCount || 0} files
                             </div>
                           </div>
                         </div>
@@ -347,13 +350,35 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <DocumentTextIcon className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-900">
-                            {user.metadata?.maxAllowedFiles !== undefined
-                              ? `${user.metadata.maxAllowedFiles} files`
-                              : "Unlimited"}
-                          </span>
+                        <div className="flex flex-col space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <DocumentTextIcon className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-900">
+                              {userStats[user.username]?.fileCount || 0} /{" "}
+                              {user.metadata?.maxAllowedFiles !== undefined
+                                ? user.metadata.maxAllowedFiles
+                                : "∞"}
+                            </span>
+                          </div>
+                          {user.metadata?.maxAllowedFiles !== undefined && (
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  ((userStats[user.username]?.fileCount || 0) / user.metadata.maxAllowedFiles) >= 0.9
+                                    ? "bg-red-500"
+                                    : ((userStats[user.username]?.fileCount || 0) / user.metadata.maxAllowedFiles) >= 0.7
+                                    ? "bg-yellow-500"
+                                    : "bg-green-500"
+                                }`}
+                                style={{
+                                  width: `${Math.min(
+                                    100,
+                                    ((userStats[user.username]?.fileCount || 0) / user.metadata.maxAllowedFiles) * 100
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -394,7 +419,6 @@ export default function UsersPage() {
           isOpen={isCreateUserOpen}
           onClose={() => setIsCreateUserOpen(false)}
           onSuccess={handleCreateUserSuccess}
-          onError={handleCreateUserError}
         />
 
         {/* Edit User Modal */}
@@ -403,7 +427,6 @@ export default function UsersPage() {
           onClose={() => setIsEditUserOpen(false)}
           user={selectedUser}
           onSuccess={handleEditUserSuccess}
-          onError={handleEditUserError}
         />
       </div>
     </div>
