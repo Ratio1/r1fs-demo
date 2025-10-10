@@ -11,9 +11,11 @@ import {
   DocumentTextIcon,
   ArrowLeftIcon,
   ExclamationTriangleIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useToast } from "@/lib/contexts/ToastContext";
 import CreateUserModal from "@/components/CreateUserModal";
+import EditUserModal from "@/components/EditUserModal";
 
 interface User {
   username: string;
@@ -37,6 +39,8 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { showToast } = useToast();
   const router = useRouter();
 
@@ -88,6 +92,32 @@ export default function UsersPage() {
   };
 
   const handleCreateUserError = (message: string) => {
+    showToast(message, "error");
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setIsEditUserOpen(true);
+  };
+
+  const handleEditUserSuccess = (updatedUser: {
+    username: string;
+    role: "admin" | "user";
+    maxAllowedFiles?: number;
+  }) => {
+    const limitText =
+      updatedUser.maxAllowedFiles !== undefined
+        ? ` (max files: ${updatedUser.maxAllowedFiles})`
+        : " (unlimited)";
+    showToast(
+      `Updated user ${updatedUser.username}${limitText}`,
+      "success"
+    );
+    // Refresh the users list
+    fetchUsers();
+  };
+
+  const handleEditUserError = (message: string) => {
     showToast(message, "error");
   };
 
@@ -277,6 +307,9 @@ export default function UsersPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Last Updated
                     </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -339,6 +372,15 @@ export default function UsersPage() {
                           </span>
                         </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleEditUser(user)}
+                          className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-900 transition-colors"
+                        >
+                          <PencilSquareIcon className="h-4 w-4" />
+                          <span>Edit</span>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -353,6 +395,15 @@ export default function UsersPage() {
           onClose={() => setIsCreateUserOpen(false)}
           onSuccess={handleCreateUserSuccess}
           onError={handleCreateUserError}
+        />
+
+        {/* Edit User Modal */}
+        <EditUserModal
+          isOpen={isEditUserOpen}
+          onClose={() => setIsEditUserOpen(false)}
+          user={selectedUser}
+          onSuccess={handleEditUserSuccess}
+          onError={handleEditUserError}
         />
       </div>
     </div>
