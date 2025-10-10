@@ -27,8 +27,62 @@ type CreateUserResponse = {
   error?: string;
 };
 
+type ListUsersResponse = {
+  success: boolean;
+  users?: Pick<BasicUser, 'username' | 'role' | 'metadata' | 'createdAt' | 'updatedAt'>[];
+  error?: string;
+};
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const sessionCookieValue = cookieStore.get(config.auth.sessionCookieName)?.value;
+  const session = readSessionFromCookie(sessionCookieValue);
+
+  if (!session || session.username !== 'admin') {
+    return NextResponse.json<ListUsersResponse>(
+      { success: false, error: 'Forbidden' },
+      { status: 403 }
+    );
+  }
+
+  const client = getAuthClient();
+
+  try {
+    await ensureAuthInitialized(client);
+
+    // Use the official getAllUsers() method from SDK v0.4.0+
+    const allUsers = await client.simple.getAllUsers();
+
+    const users: Pick<BasicUser, 'username' | 'role' | 'metadata' | 'createdAt' | 'updatedAt'>[] = allUsers.map(user => ({
+      username: user.username,
+      role: user.role,
+      metadata: user.metadata || {},
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }));
+
+    // Sort users by creation date (newest first)
+    users.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return NextResponse.json<ListUsersResponse>(
+      {
+        success: true,
+        users,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('[users] Failed to list users', error);
+
+    return NextResponse.json<ListUsersResponse>(
+      { success: false, error: 'Failed to retrieve users' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {

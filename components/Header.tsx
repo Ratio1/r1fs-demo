@@ -9,6 +9,7 @@ import {
 	UserIcon,
 	ArrowRightOnRectangleIcon,
 	UserPlusIcon,
+	UsersIcon,
 } from "@heroicons/react/24/outline";
 import { useToast } from "@/lib/contexts/ToastContext";
 import DualStatusWidget from "./DualStatusWidget";
@@ -145,14 +146,24 @@ export default function Header({
 							<DualStatusWidget />
 
 							{isAdmin && (
-								<button
-									type="button"
-									onClick={() => setIsCreateUserOpen(true)}
-									className="inline-flex items-center space-x-2 rounded-xl bg-gradient-to-r from-ratio1-500 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:from-ratio1-600 hover:to-purple-700"
-								>
-									<UserPlusIcon className="h-4 w-4" />
-									<span>Create user</span>
-								</button>
+								<>
+									<button
+										type="button"
+										onClick={() => router.push('/users')}
+										className="inline-flex items-center space-x-2 rounded-xl bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 transition hover:bg-white"
+									>
+										<UsersIcon className="h-4 w-4" />
+										<span>Users</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setIsCreateUserOpen(true)}
+										className="inline-flex items-center space-x-2 rounded-xl bg-gradient-to-r from-ratio1-500 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:from-ratio1-600 hover:to-purple-700"
+									>
+										<UserPlusIcon className="h-4 w-4" />
+										<span>Create user</span>
+									</button>
+								</>
 							)}
 
 							<button
