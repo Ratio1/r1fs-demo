@@ -22,13 +22,28 @@ export async function GET(request: NextRequest) {
     const r1fs = getR1FSClient();
 
     if (mode === 'streaming') {
-      const response = await r1fs.getFile({ cid, secret });
+      const result = await r1fs.getFile({ cid, secret });
 
-      return new NextResponse(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
+      // Handle the union type - result could be R1FSDownloadResult or R1FSDownloadResponse
+      if ('result' in result) {
+        // This is R1FSDownloadResponse (fullResponse: true)
+        return new NextResponse(result.result.file_data, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="${result.result.filename || 'file'}"`,
+          },
+        });
+      } else {
+        // This is R1FSDownloadResult (fullResponse: false)
+        return new NextResponse(result.file_data, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="${result.filename || 'file'}"`,
+          },
+        });
+      }
     }
 
     const result = await (r1fs as any).getFileBase64(cid, secret);
@@ -56,13 +71,28 @@ export async function POST(request: NextRequest) {
     const r1fs = getR1FSClient();
 
     if (mode === 'streaming') {
-      const response = await r1fs.getFile({ cid, secret });
+      const result = await r1fs.getFile({ cid, secret });
 
-      return new NextResponse(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
+      // Handle the union type - result could be R1FSDownloadResult or R1FSDownloadResponse
+      if ('result' in result) {
+        // This is R1FSDownloadResponse (fullResponse: true)
+        return new NextResponse(result.result.file_data, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="${result.result.filename || 'file'}"`,
+          },
+        });
+      } else {
+        // This is R1FSDownloadResult (fullResponse: false)
+        return new NextResponse(result.file_data, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="${result.filename || 'file'}"`,
+          },
+        });
+      }
     }
 
     const result = await (r1fs as any).getFileBase64(cid, secret);

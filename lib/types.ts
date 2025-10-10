@@ -63,6 +63,32 @@ export interface DownloadResponse {
   filename: string;
 }
 
+// R1FS SDK Types (matching @ratio1/edge-node-client)
+export interface R1FSDownloadResult {
+  file_path?: string;
+  file_base64_str?: string;
+  filename?: string;
+  meta?: {
+    file: string;
+    filename: string;
+  };
+  file_data?: any;
+}
+
+export interface R1FSBaseResponse<T = unknown> {
+  result: T;
+  server_node_addr: string;
+  evm_network: string;
+  ee_node_alias: string;
+  ee_node_address: string;
+  ee_node_eth_address: string;
+  ee_node_network: string;
+  ee_node_ver: string;
+  [key: string]: any;
+}
+
+export interface R1FSDownloadResponse extends R1FSBaseResponse<R1FSDownloadResult> {}
+
 export type TransferMode = 'streaming' | 'base64';
 
 // CSTORE API parameter types

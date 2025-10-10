@@ -32,7 +32,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sessionCookieValue = cookieStore.get(config.auth.sessionCookieName)?.value;
   const session = readSessionFromCookie(sessionCookieValue);
 
