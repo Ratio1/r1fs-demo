@@ -2,10 +2,12 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/contexts/ToastContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -36,10 +38,18 @@ export default function LoginPage() {
         throw new Error(message);
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      // Success - show success toast and redirect
+      showToast('Successfully signed in!', 'success');
+      
+      // Small delay to show the toast before navigation
+      setTimeout(() => {
+        router.push(redirectTo);
+        router.refresh();
+      }, 100);
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : 'Unexpected login error.');
+      const message = loginError instanceof Error ? loginError.message : 'Unexpected login error.';
+      setError(message);
+      showToast(message, 'error');
     } finally {
       setIsSubmitting(false);
     }

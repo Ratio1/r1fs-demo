@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState } from 'react';
+import ToastContainer from '@/components/Toast';
 
 interface Toast {
   id: string;
@@ -39,6 +40,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast, hideToast, toasts }}>
       {children}
+      <ToastContainer />
     </ToastContext.Provider>
   );
 }
