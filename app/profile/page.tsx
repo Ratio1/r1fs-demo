@@ -1,22 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   UserCircleIcon,
   ShieldCheckIcon,
   ShieldExclamationIcon,
   DocumentTextIcon,
   CalendarIcon,
-  ArrowLeftIcon,
   KeyIcon,
 } from "@heroicons/react/24/outline";
 import { useUser } from "@/lib/contexts/UserContext";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
+import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 
 export default function ProfilePage() {
   const { username } = useUser();
-  const router = useRouter();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   // TODO: Fetch user details from API
@@ -42,31 +40,21 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+    <AuthenticatedLayout>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              <ArrowLeftIcon className="h-5 w-5" />
-              <span>Back</span>
-            </button>
-            <div className="h-6 w-px bg-gray-300" />
-            <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-ratio1-500 to-purple-600 p-3 rounded-xl shadow-lg">
-                <UserCircleIcon className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold gradient-text">
-                  My Profile
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  View and manage your account
-                </p>
-              </div>
+            <div className="bg-gradient-to-br from-ratio1-500 to-purple-600 p-4 rounded-2xl shadow-lg">
+              <UserCircleIcon className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold gradient-text">
+                My Profile
+              </h1>
+              <p className="text-gray-600 mt-1 text-lg">
+                View and manage your account
+              </p>
             </div>
           </div>
         </div>
@@ -201,7 +189,7 @@ export default function ProfilePage() {
           username={username}
         />
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 }
 
