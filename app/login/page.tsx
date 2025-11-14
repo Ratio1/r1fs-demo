@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/lib/contexts/ToastContext';
+import FloatingGitHubLink from '@/components/FloatingGitHubLink';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -126,6 +127,9 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+
+      {/* Floating GitHub Link */}
+      <FloatingGitHubLink />
     </div>
   );
 }
