@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     // Get the SDK client singleton
     const client = getRatio1NodeClient();
 
-    // Fetch CStore service status - includes node info, uptime, version
-    const status = await client.cstore.getStatus();
+    // Fetch CStore service status with full response (includes node info, uptime, version)
+    const status = await client.cstore.getStatusFull();
 
     // Augment with local peer configuration
     const data = {
