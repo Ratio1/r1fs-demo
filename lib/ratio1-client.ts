@@ -33,6 +33,30 @@ import { createEdgeSdkBrowserClient } from '@ratio1/edge-sdk-ts/browser';
 import { config } from '@/lib/config';
 
 /**
+ * Custom HTTP adapter using node-fetch for proper form-data stream handling.
+ *
+ * Why is this needed?
+ * - Node.js 18+ has built-in fetch (based on undici) which doesn't properly
+ *   handle streams from the 'form-data' npm package
+ * - The SDK uses 'form-data' for multipart uploads (file streaming)
+ * - node-fetch correctly handles form-data streams
+ *
+ * This adapter ensures file uploads work correctly in the Node.js environment.
+ */
+async function createNodeFetchAdapter() {
+  // Use cross-fetch which internally uses node-fetch in Node.js
+  // This ensures proper handling of form-data streams
+  const crossFetch = await import('cross-fetch');
+  const fetchImpl = crossFetch.default || crossFetch;
+
+  return {
+    fetch: async (url: string, options?: RequestInit) => {
+      return fetchImpl(url, options as any);
+    },
+  };
+}
+
+/**
  * Shared configuration options for both Node.js and Browser clients.
  * These options are derived from environment variables via lib/config.ts.
  */
@@ -56,16 +80,24 @@ type BrowserClient = ReturnType<typeof createEdgeSdkBrowserClient>;
  */
 type GlobalWithRatio1 = typeof globalThis & {
   __ratio1NodeClient?: NodeClient;
+  __ratio1NodeClientPromise?: Promise<NodeClient>;
 };
 
 const globalWithRatio1 = globalThis as GlobalWithRatio1;
 
 /**
- * Creates a new Node.js SDK client instance.
+ * Creates a new Node.js SDK client instance with custom HTTP adapter.
  * Called once per server lifecycle via the singleton pattern.
+ *
+ * Uses cross-fetch adapter to ensure proper form-data stream handling
+ * for file uploads (built-in fetch has compatibility issues).
  */
-function createNodeClient(): NodeClient {
-  return createEdgeSdk(sharedClientOptions);
+async function createNodeClientAsync(): Promise<NodeClient> {
+  const httpAdapter = await createNodeFetchAdapter();
+  return createEdgeSdk({
+    ...sharedClientOptions,
+    httpAdapter,
+  });
 }
 
 /**
@@ -77,16 +109,19 @@ function createBrowserClient(): BrowserClient {
 }
 
 /**
- * Returns the singleton Node.js SDK client.
+ * Returns the singleton Node.js SDK client (async version).
  *
  * Use this in API routes and server-side code to interact with R1FS and CStore.
  * The client is lazily initialized on first call and reused thereafter.
+ *
+ * This is async because the HTTP adapter needs to be created asynchronously
+ * to ensure proper form-data stream handling for file uploads.
  *
  * @throws Error if called from browser context
  *
  * @example
  * // In an API route:
- * const client = getRatio1NodeClient();
+ * const client = await getRatio1NodeClientAsync();
  *
  * // Upload a file to R1FS
  * const result = await client.r1fs.addFile({ file, filename });
@@ -94,21 +129,58 @@ function createBrowserClient(): BrowserClient {
  * // Store metadata in CStore
  * await client.cstore.hset({ hkey: 'files', key: nodeId, value: JSON.stringify(metadata) });
  */
+export async function getRatio1NodeClientAsync(): Promise<NodeClient> {
+  if (typeof window !== 'undefined') {
+    throw new Error('getRatio1NodeClientAsync must only be called on the server');
+  }
+
+  // Use cached promise to ensure single initialization
+  if (!globalWithRatio1.__ratio1NodeClientPromise) {
+    globalWithRatio1.__ratio1NodeClientPromise = createNodeClientAsync().then((client) => {
+      globalWithRatio1.__ratio1NodeClient = client;
+
+      if (config.DEBUG) {
+        console.log('[ratio1] Node client initialized with cross-fetch adapter', {
+          cstoreUrl: sharedClientOptions.cstoreUrl,
+          r1fsUrl: sharedClientOptions.r1fsUrl,
+          chainstorePeers: sharedClientOptions.chainstorePeers,
+        });
+      }
+
+      return client;
+    });
+  }
+
+  return globalWithRatio1.__ratio1NodeClientPromise;
+}
+
+/**
+ * Returns the singleton Node.js SDK client (sync version).
+ *
+ * @deprecated Use getRatio1NodeClientAsync() for proper file upload support.
+ * This sync version uses built-in fetch which has issues with form-data streams.
+ *
+ * @throws Error if called from browser context
+ */
 export function getRatio1NodeClient(): NodeClient {
   if (typeof window !== 'undefined') {
     throw new Error('getRatio1NodeClient must only be called on the server');
   }
 
-  if (!globalWithRatio1.__ratio1NodeClient) {
-    globalWithRatio1.__ratio1NodeClient = createNodeClient();
+  // Return cached client if already initialized by async version
+  if (globalWithRatio1.__ratio1NodeClient) {
+    return globalWithRatio1.__ratio1NodeClient;
+  }
 
-    if (config.DEBUG) {
-      console.log('[ratio1] Node client initialized', {
-        cstoreUrl: sharedClientOptions.cstoreUrl,
-        r1fsUrl: sharedClientOptions.r1fsUrl,
-        chainstorePeers: sharedClientOptions.chainstorePeers,
-      });
-    }
+  // Fallback: create sync client (may have upload issues)
+  globalWithRatio1.__ratio1NodeClient = createEdgeSdk(sharedClientOptions);
+
+  if (config.DEBUG) {
+    console.log('[ratio1] Node client initialized (sync fallback)', {
+      cstoreUrl: sharedClientOptions.cstoreUrl,
+      r1fsUrl: sharedClientOptions.r1fsUrl,
+      chainstorePeers: sharedClientOptions.chainstorePeers,
+    });
   }
 
   return globalWithRatio1.__ratio1NodeClient;

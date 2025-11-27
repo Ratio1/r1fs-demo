@@ -24,7 +24,7 @@ import Busboy from 'busboy';
 import { PassThrough, Readable } from 'node:stream';
 import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
-import { getRatio1NodeClient } from '@/lib/ratio1-client';
+import { getRatio1NodeClientAsync } from '@/lib/ratio1-client';
 import { FileMetadata } from '@/lib/types';
 
 const OWNER_HEADER = 'x-ratio1-owner';
@@ -35,7 +35,7 @@ export const runtime = 'nodejs';
 
 type NullableString = string | undefined | null;
 
-type Ratio1Client = ReturnType<typeof getRatio1NodeClient>;
+type Ratio1Client = Awaited<ReturnType<typeof getRatio1NodeClientAsync>>;
 type R1fsClient = Ratio1Client['r1fs'];
 type CstoreClient = Ratio1Client['cstore'];
 
@@ -202,7 +202,8 @@ async function handleStreamingUpload(
 
 export async function POST(request: NextRequest) {
   try {
-    const ratio1 = getRatio1NodeClient();
+    // Use async client with cross-fetch adapter for proper form-data stream handling
+    const ratio1 = await getRatio1NodeClientAsync();
     const r1fs = ratio1.r1fs;
     const cstore = ratio1.cstore;
 
