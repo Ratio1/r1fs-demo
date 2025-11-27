@@ -43,9 +43,13 @@ export async function GET() {
     // Count files per owner across all nodes
     const userStats: Record<string, { fileCount: number }> = {};
 
-    Object.entries(result).forEach(([_machine, stringifiedArray]) => {
+    Object.entries(result).forEach(([_, stringifiedArray]) => {
+      if (typeof stringifiedArray !== 'string' || !stringifiedArray.trim()) {
+        return;
+      }
+
       try {
-        const parsed = JSON.parse(stringifiedArray as string);
+        const parsed = JSON.parse(stringifiedArray);
         if (Array.isArray(parsed)) {
           parsed.forEach((file: any) => {
             if (file && typeof file === 'object' && file.owner) {
@@ -57,8 +61,8 @@ export async function GET() {
             }
           });
         }
-      } catch (parseError) {
-        console.error('Error parsing file data:', parseError);
+      } catch {
+        // Skip invalid entries
       }
     });
 

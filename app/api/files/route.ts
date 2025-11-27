@@ -37,9 +37,13 @@ export async function GET() {
     const transformedFiles: FilesData = {};
 
     Object.entries(result).forEach(([machine, stringifiedArray]) => {
+      // Skip non-string or empty values
+      if (typeof stringifiedArray !== 'string' || !stringifiedArray.trim()) {
+        return;
+      }
+
       try {
-        // CStore values are always strings - parse the JSON array
-        const parsed = JSON.parse(stringifiedArray as string);
+        const parsed = JSON.parse(stringifiedArray);
 
         if (Array.isArray(parsed)) {
           // Handle legacy format: array of CID strings ["cid1", "cid2"]
@@ -55,12 +59,9 @@ export async function GET() {
             // Current format: array of FileMetadata objects
             transformedFiles[machine] = parsed as FileMetadata[];
           }
-        } else {
-          transformedFiles[machine] = [];
         }
-      } catch (parseError) {
-        console.error(`Error parsing data for machine ${machine}:`, parseError);
-        transformedFiles[machine] = [];
+      } catch {
+        // Skip entries that aren't valid JSON arrays
       }
     });
 
