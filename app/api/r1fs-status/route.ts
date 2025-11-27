@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     // Get the SDK client singleton
     const client = getRatio1NodeClient();
 
-    // Fetch R1FS service status - includes node address, network, version
-    const data = await client.r1fs.getStatus();
+    // Fetch R1FS service status with full response (includes node address, network, version)
+    const data = await client.r1fs.getStatusFull();
 
     if (config.DEBUG) {
       console.log('R1FS Status API response data:', JSON.stringify(data, null, 2));
