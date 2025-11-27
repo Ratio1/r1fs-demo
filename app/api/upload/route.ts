@@ -126,8 +126,9 @@ async function handleStreamingUpload(
       file.pipe(passThrough);
 
       // Upload file stream to R1FS
+      // Use addFileFull() to get complete response including ee_node_address
       // Returns CID and node address where file is stored
-      uploadPromise = r1fs.addFile({
+      uploadPromise = r1fs.addFileFull({
         file: passThrough,
         filename: filename || info?.filename,
         secret: secret || undefined,
@@ -235,7 +236,8 @@ export async function POST(request: NextRequest) {
       nonce = parseNonce(data.nonce);
 
       // Upload base64-encoded file to R1FS
-      uploadResult = await r1fs.addFileBase64(data);
+      // Use addFileBase64Full() to get complete response including ee_node_address
+      uploadResult = await r1fs.addFileBase64Full(data);
     }
 
     // Extract CID (content identifier) and node address from upload response
