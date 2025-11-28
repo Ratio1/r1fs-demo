@@ -1,24 +1,24 @@
 {
-  "name": "r1fs-demo",
-  "version": "1.2.1",
+  "name": "r1fs-starter",
+  "version": "2.0.0",
+  "description": "R1FS + CStore Starter Kit - Minimal scaffold for building on Ratio1's distributed storage",
   "private": false,
   "scripts": {
     "dev": "next dev -p 3333",
     "build": "next build",
-    "start": "NEXT_LOG_LEVEL=verbose next start -p 3333",
-    "lint": "next lint"
+    "start": "next start -p 3333",
+    "lint": "next lint",
+    "sandbox": "EE_CHAINSTORE_API_URL=http://localhost:41234 EE_R1FS_API_URL=http://localhost:41235 npm run dev"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.2.0",
     "@ratio1/cstore-auth-ts": "^0.5.0",
-    "@ratio1/edge-node-client": "^1.1.4",
+    "@ratio1/edge-sdk-ts": "^1.0.0",
     "@tailwindcss/postcss": "^4.1.11",
     "autoprefixer": "^10.4.21",
     "busboy": "^1.6.0",
-    "cross-fetch": "^4.1.0",
     "dotenv": "^17.2.1",
-    "form-data": "^4.0.4",
     "next": "15.4.4",
     "postcss": "^8.5.6",
     "react": "^19.1.0",

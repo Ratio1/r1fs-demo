@@ -1,199 +1,245 @@
-# ratio1-drive
+# R1FS + CStore Starter Kit
 
-A Next.js application for decentralized file management with Docker support, built on the Ratio1 Edge Network.
+A minimal scaffold for building applications on Ratio1's distributed storage network.
 
-## Features
+```
+┌─────────────┐      ┌───────────────┐      ┌─────────────────┐
+│   Browser   │─────▶│  Next.js API  │─────▶│   Edge Node     │
+│     UI      │      │    (SDK)      │      │ R1FS + CStore   │
+└─────────────┘      └───────────────┘      └─────────────────┘
 
-- **Decentralized File Storage**: Upload and manage files on the Ratio1 Edge Network
-- **Real-time Status Monitoring**: Monitor CStore and R1FS service status
-- **Modern UI**: Beautiful, responsive interface with Tailwind CSS
-- **Docker Support**: Containerized deployment with environment configuration
-- **TypeScript**: Full type safety throughout the application
-
-## Current Version
-
-**v0.4.1** - Latest stable release
-
-## GitHub Actions Workflows
-
-This repository includes three GitHub Actions workflows:
-
-### 1. CI (Main Workflow)
-
-Orchestrates the entire CI/CD pipeline, including version checking and Docker builds.
-
-**Triggers:**
-- Push to `main` branch
-- Manual workflow dispatch
-
-### 2. Version Check
-
-Automatically checks if the version in `package.json` was incremented and creates a tag if it was, or fails if it wasn't.
-
-**Behavior:**
-- ✅ If version was incremented: Creates and pushes a tag (e.g., `v0.4.1`)
-- ❌ If version was not incremented: Fails the workflow with clear error message
-
-### 3. Docker Build and Push
-
-Automatically builds and pushes Docker images to `tvitalii/ratio1-drive` on Docker Hub.
-
-**Setup Required:**
-
-To enable the Docker build workflow, you need to add the following secrets to your GitHub repository:
-
-1. Go to your repository settings → Secrets and variables → Actions
-2. Add the following secrets:
-   - `DOCKER_USERNAME`: Your Docker Hub username
-   - `DOCKER_TOKEN`: Your Docker Hub personal access token
-
-**Triggers:**
-- Called by CI workflow when version is incremented
-
-**Image Tags:**
-The workflow automatically creates tags based on:
-- Latest tag for the most recent version
-- Multi-platform support (linux/amd64, linux/arm64)
-
-## Running the Container
-
-The container expects API URLs to be passed as environment variables when starting:
-
-```bash
-docker run -p 3333:3333 \
-  -e EE_CHAINSTORE_API_URL=http://host.docker.internal:8001 \
-  -e EE_R1FS_API_URL=http://host.docker.internal:8002 \
-  -e CSTORE_HKEY=ratio1-drive-demo-1 \
-  tvitalii/ratio1-drive:latest
+Data Flow:
+  Upload:   Browser ──file──▶ API ──▶ R1FS.addFile() ──▶ CID
+  Announce: API ──CID+metadata──▶ CStore.hset()
+  Discover: API ──▶ CStore.hgetall() ──▶ file list ──▶ Browser
+  Download: Browser ──CID──▶ API ──▶ R1FS.getFile() ──▶ stream
 ```
 
-### Environment Variables
+## What is This?
 
-#### Required for Authentication
+This starter kit demonstrates the core pattern for building on Ratio1:
 
-These variables are **required** for the authentication system to work:
+1. **Store files** in R1FS (distributed file storage) → receive a CID
+2. **Announce metadata** via CStore (distributed key-value store)
+3. **Discover & retrieve** files from any node in the network
 
-- `EE_CSTORE_AUTH_HKEY`: CStore hash key that stores user credential records (e.g., `auth` or `my-app-auth`)
-- `EE_CSTORE_AUTH_SECRET`: Server-side pepper/secret mixed into password hashes (e.g., a long random string)
+Use this as a foundation for your own applications - the Ratio1 integration code is designed to be reusable.
 
-#### Required for First-Time Setup
+## Quick Start
 
-- `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`: Password to bootstrap the initial `admin` account on first run (optional after admin user exists)
+### Prerequisites
 
-#### Service URLs
+- Node.js 18+
+- npm or pnpm
+- Local Ratio1 services (sandbox or R1EN)
 
-- `EE_CHAINSTORE_API_URL`: URL for the CStore API service (default: `http://localhost:30000`)
-  - Alternative: `CHAINSTORE_API_URL`
-- `EE_R1FS_API_URL`: URL for the R1FS API service (default: `http://localhost:30001`)
-  - Alternative: `R1FS_API_URL`
+### 1. Install Dependencies
 
-#### Storage Configuration
+```bash
+npm install
+```
 
-- `CSTORE_HKEY`: Hash key for CStore file metadata operations (default: `ratio1-drive-test`)
+### 2. Configure Environment
 
-#### Session Configuration
+```bash
+cp .env.example .env.local
+```
 
-- `AUTH_SESSION_COOKIE`: Session cookie name (default: `r1-session`)
-- `AUTH_SESSION_TTL_SECONDS`: Session lifetime in seconds (default: `86400` = 24 hours)
+Edit `.env.local` with your settings (see Environment Configuration below).
 
-#### Optional Configuration
+### 3. Start Development Server
 
-- `MAX_FILE_SIZE_MB`: Maximum file upload size in MB (default: `10`)
-- `DEBUG`: Enable debug logging (default: `false`)
-- `NODE_ENV`: Node.js environment (`development` or `production`)
-- `NEXT_TELEMETRY_DISABLED`: Disable Next.js telemetry (default: `1`)
-- `EE_CHAINSTORE_PEERS`: JSON array of additional CStore peer URLs (optional)
+**Sandbox mode** (recommended for local development):
+```bash
+npm run sandbox
+```
 
-## Docker Compose
+**Standard mode** (uses .env.local settings):
+```bash
+npm run dev
+```
 
-For local development with Docker Compose:
+The app will be available at `http://localhost:3333`.
+
+### 4. First Login
+
+On first run with `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` set:
+- **Username**: `admin`
+- **Password**: (value of `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`)
+
+Remove `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` from `.env.local` after first login.
+
+## Local Development Modes
+
+### Option 1: r1-plugins-sandbox (Recommended)
+
+The simplest way to develop locally. The sandbox provides local R1FS and CStore services.
+
+1. **Install and start the sandbox**:
+   ```bash
+   # Install r1-plugins-sandbox (see: https://github.com/Ratio1/r1-plugins-sandbox)
+   # Start with default ports:
+   r1-plugins-sandbox --cstore-addr :41234 --r1fs-addr :41235
+   ```
+
+2. **Run the app in sandbox mode**:
+   ```bash
+   npm run sandbox
+   ```
+
+The sandbox script automatically sets the correct URLs:
+- CStore: `http://localhost:41234`
+- R1FS: `http://localhost:41235`
+
+### Option 2: R1EN Docker (Devnet/Testnet)
+
+For testing against real network conditions with a local edge node.
+
+1. **Start an R1EN container** (Docker image details to be provided)
+2. **Configure `.env.local`**:
+   ```bash
+   EE_CHAINSTORE_API_URL=http://localhost:31234
+   EE_R1FS_API_URL=http://localhost:31235
+   ```
+3. **Run the app**:
+   ```bash
+   npm run dev
+   ```
+
+## Environment Configuration
+
+All configuration is via environment variables. The same code works across all environments - only URLs change.
+
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `EE_CHAINSTORE_API_URL` | CStore service URL | `http://localhost:41234` |
+| `EE_R1FS_API_URL` | R1FS service URL | `http://localhost:41235` |
+| `EE_CSTORE_AUTH_HKEY` | Hash key for user credentials | `my-app-auth` |
+| `EE_CSTORE_AUTH_SECRET` | Password hashing secret | `<random-string>` |
+
+### Optional Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CSTORE_HKEY` | Hash key for file metadata | `ratio1-drive-test` |
+| `MAX_FILE_SIZE_MB` | Max upload size | `10` |
+| `AUTH_SESSION_COOKIE` | Session cookie name | `r1-session` |
+| `AUTH_SESSION_TTL_SECONDS` | Session lifetime | `86400` (24h) |
+| `DEBUG` | Enable debug logging | `false` |
+
+See `.env.example` for complete documentation.
+
+## Concepts
+
+### R1FS (Ratio1 File System)
+
+A distributed, content-addressed file storage system:
+- Files are stored on edge nodes and addressed by CID (Content Identifier)
+- Similar to IPFS, optimized for the Ratio1 network
+- Supports optional encryption with user-provided secret keys
+
+**SDK methods**: `r1fs.addFile()`, `r1fs.getFile()`, `r1fs.addFileBase64()`, `r1fs.getFileBase64()`
+
+### CStore (ChainStore)
+
+A distributed key-value store for metadata and coordination:
+- Used to announce/discover file metadata across the network
+- Supports simple key-value and hash-based storage
+- All values are JSON strings
+
+**SDK methods**: `cstore.setValue()`, `cstore.getValue()`, `cstore.hset()`, `cstore.hget()`, `cstore.hgetall()`
+
+### The Pattern
+
+```
+1. UPLOAD: client.r1fs.addFile(file) → returns { cid, ee_node_address }
+
+2. ANNOUNCE: client.cstore.hset({
+     hkey: 'my-app-files',
+     key: ee_node_address,
+     value: JSON.stringify([{ cid, filename, owner, ... }])
+   })
+
+3. DISCOVER: client.cstore.hgetall({ hkey: 'my-app-files' })
+   → returns { node1: '[...]', node2: '[...]', ... }
+
+4. DOWNLOAD: client.r1fs.getFile({ cid, secret })
+   → returns file data
+```
+
+## Project Structure
+
+```
+r1fs-starter/
+├── app/                      # Next.js App Router
+│   ├── api/                  # Backend API routes
+│   │   ├── upload/           # File upload (R1FS + CStore)
+│   │   ├── download/         # File download (R1FS)
+│   │   ├── files/            # List files (CStore)
+│   │   ├── cstore-status/    # CStore health check
+│   │   └── r1fs-status/      # R1FS health check
+│   ├── login/                # Login page
+│   └── page.tsx              # Main dashboard
+├── components/               # React UI components
+├── lib/
+│   ├── ratio1-client.ts      # SDK client singleton (REUSE THIS!)
+│   ├── config.ts             # Environment configuration
+│   ├── types.ts              # TypeScript interfaces
+│   ├── auth/                 # Authentication utilities
+│   ├── contexts/             # React contexts
+│   └── services/             # Client-side API helpers
+└── .env.example              # Environment template
+```
+
+### Key Files to Understand
+
+- **`lib/ratio1-client.ts`** - Centralized SDK initialization. Reuse this pattern in your apps.
+- **`lib/config.ts`** - Environment-aware configuration. Demonstrates the zero-diff approach.
+- **`app/api/upload/route.ts`** - Complete upload flow: R1FS store → CStore announce.
+- **`app/api/files/route.ts`** - Discovery flow: CStore query → parse → transform.
+
+## Using This as a Starter
+
+1. **Clone and customize** - Replace the demo UI with your domain-specific interface
+2. **Keep the integration** - The `lib/ratio1-client.ts` and `lib/config.ts` work as-is
+3. **Use your own HKEY** - Change `CSTORE_HKEY` to namespace your app's data
+4. **Extend the API** - Add your own routes following the patterns in `app/api/`
+
+## Docker Deployment
+
+### Build and Run
+
+```bash
+docker build -t r1fs-starter .
+docker run -p 3333:3333 \
+  -e EE_CHAINSTORE_API_URL=http://host.docker.internal:41234 \
+  -e EE_R1FS_API_URL=http://host.docker.internal:41235 \
+  -e EE_CSTORE_AUTH_HKEY=my-auth \
+  -e EE_CSTORE_AUTH_SECRET=my-secret \
+  r1fs-starter
+```
+
+### Docker Compose
 
 ```bash
 docker-compose up -d
 ```
 
-This will start the application on port 3333 with the default environment configuration.
+## Tech Stack
 
-## Local Development
+- **Next.js 15** with App Router
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS**
+- **@ratio1/edge-sdk-ts** - R1FS + CStore SDK
+- **@ratio1/cstore-auth-ts** - Authentication helper
 
-### Quick Start
+## License
 
-1. **Create `.env.local` file** in the project root:
+MIT
 
-```bash
-# Required - Authentication
-EE_CSTORE_AUTH_HKEY=auth
-EE_CSTORE_AUTH_SECRET=your-long-random-secret-here
+---
 
-# Required - First time setup (creates admin user)
-EE_CSTORE_BOOTSTRAP_ADMIN_PASS=admin
-
-# Service URLs
-EE_CHAINSTORE_API_URL=http://localhost:51234
-EE_R1FS_API_URL=http://localhost:51235
-
-# Storage
-CSTORE_HKEY=ratio1-drive-dev
-```
-
-2. **Install dependencies and start**:
-
-```bash
-npm install
-npm run dev
-```
-
-The development server will start on `http://localhost:3333`.
-
-### First Time Login
-
-On first run with `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` set, an admin user will be created:
-- **Username**: `admin`
-- **Password**: (value of `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`)
-
-After the first login, you can remove `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` from `.env.local`.
-
-## Building Locally
-
-```bash
-docker build -t ratio1-drive .
-docker run -p 3333:3333 ratio1-drive
-```
-
-## API Integration
-
-The application integrates with the Ratio1 Edge Network using the `@ratio1/edge-node-client` SDK:
-
-- **CStore API**: For metadata storage and file indexing
-- **R1FS API**: For file upload/download operations
-
-## Project Structure
-
-```
-ratio1-drive/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   ├── file/[cid]/        # File detail pages
-│   └── page.tsx           # Main application page
-├── components/             # React components
-├── lib/                    # Shared libraries
-│   ├── config.ts          # Environment-aware configuration
-│   ├── ratio1-client.ts   # Ratio1 SDK singleton initialiser
-│   ├── contexts/          # React contexts
-│   ├── services/          # Client-side fetch helpers
-│   ├── api-logger.ts      # API logging utilities
-│   └── types.ts           # Shared domain types
-├── mock-services/          # Mock services for development
-└── Dockerfile             # Container configuration
-```
-
-## Technologies Used
-
-- **Next.js 15.4.4**: React framework with App Router
-- **React 19.1.0**: UI library
-- **TypeScript 5.8.3**: Type safety
-- **Tailwind CSS 4.1.11**: Styling
-- **ratio1-edge-node-client 1.0.0**: Ratio1 Edge Network SDK
-- **@ratio1/cstore-auth-ts**: CStore-backed authentication helper
-- **Docker**: Containerization
-- **GitHub Actions**: CI/CD automation
+For more information about the Ratio1 network, visit [ratio1.ai](https://ratio1.ai).
