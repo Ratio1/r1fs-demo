@@ -81,7 +81,7 @@ fi
 
 # Build the development Docker image
 print_status "Building development Docker image..."
-docker build -f Dockerfile.dev -t ratio1-drive:dev . --quiet
+docker build -f Dockerfile.dev -t r1fs-demo:dev . --quiet
 
 if [ $? -eq 0 ]; then
     print_success "Development Docker image built successfully"
@@ -126,7 +126,7 @@ sleep 5
 # Check if services are running
 print_status "Checking service status..."
 
-if docker ps --format "table {{.Names}}\t{{.Status}}" | grep -q "ratio1-drive-dev"; then
+if docker ps --format "table {{.Names}}\t{{.Status}}" | grep -q "r1fs-demo-dev"; then
     print_success "Next.js application is running"
 else
     print_error "Next.js application failed to start"
@@ -154,7 +154,7 @@ echo "   • R1FS API: http://localhost:30001"
 echo ""
 echo "📊 View logs:"
 echo "   • All services: $DOCKER_COMPOSE -f docker-compose.dev.yml logs -f"
-echo "   • Next.js app: $DOCKER_COMPOSE -f docker-compose.dev.yml logs -f ratio1-drive-dev"
+echo "   • Next.js app: $DOCKER_COMPOSE -f docker-compose.dev.yml logs -f r1fs-demo-dev"
 echo "   • CStore API: $DOCKER_COMPOSE -f docker-compose.dev.yml logs -f cstore-api-mock"
 echo "   • R1FS API: $DOCKER_COMPOSE -f docker-compose.dev.yml logs -f r1fs-api-mock"
 echo ""

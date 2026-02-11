@@ -47,5 +47,5 @@ jobs:
           context: .
           push: true
           tags: |
-            docker.io/ratio1/ratio1-drive:latest
+            docker.io/ratio1/r1fs-demo:latest
           platforms: linux/amd64,linux/arm64

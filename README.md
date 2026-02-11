@@ -1,4 +1,4 @@
-# ratio1-drive
+# r1fs-demo
 
 A Next.js application for decentralized file management with Docker support, built on the Ratio1 Edge Network.
 
@@ -36,7 +36,7 @@ Automatically checks if the version in `package.json` was incremented and create
 
 ### 3. Docker Build and Push
 
-Automatically builds and pushes Docker images to `tvitalii/ratio1-drive` on Docker Hub.
+Automatically builds and pushes Docker images to `ratio1/r1fs-demo` on Docker Hub.
 
 **Setup Required:**
 
@@ -63,8 +63,8 @@ The container expects API URLs to be passed as environment variables when starti
 docker run -p 3333:3333 \
   -e EE_CHAINSTORE_API_URL=http://host.docker.internal:8001 \
   -e EE_R1FS_API_URL=http://host.docker.internal:8002 \
-  -e CSTORE_HKEY=ratio1-drive-demo-1 \
-  tvitalii/ratio1-drive:latest
+  -e CSTORE_HKEY=r1fs-demo-1 \
+  ratio1/r1fs-demo:latest
 ```
 
 ### Environment Variables
@@ -89,7 +89,7 @@ These variables are **required** for the authentication system to work:
 
 #### Storage Configuration
 
-- `CSTORE_HKEY`: Hash key for CStore file metadata operations (default: `ratio1-drive-test`)
+- `CSTORE_HKEY`: Hash key for CStore file metadata operations (default: `r1fs-demo-test`)
 
 #### Session Configuration
 
@@ -133,7 +133,7 @@ EE_CHAINSTORE_API_URL=http://localhost:51234
 EE_R1FS_API_URL=http://localhost:51235
 
 # Storage
-CSTORE_HKEY=ratio1-drive-dev
+CSTORE_HKEY=r1fs-demo-dev
 ```
 
 2. **Install dependencies and start**:
@@ -156,8 +156,8 @@ After the first login, you can remove `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` from `.en
 ## Building Locally
 
 ```bash
-docker build -t ratio1-drive .
-docker run -p 3333:3333 ratio1-drive
+docker build -t r1fs-demo .
+docker run -p 3333:3333 r1fs-demo
 ```
 
 ## API Integration
@@ -170,7 +170,7 @@ The application integrates with the Ratio1 Edge Network using the `@ratio1/edge-
 ## Project Structure
 
 ```
-ratio1-drive/
+r1fs-demo/
 ├── app/                    # Next.js app directory
 │   ├── api/               # API routes
 │   ├── file/[cid]/        # File detail pages

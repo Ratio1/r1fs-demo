@@ -17,7 +17,7 @@ The Ratio1 Edge Node Client provides a comprehensive JavaScript/TypeScript clien
 
 ### 1. Extract the SDK
 
-From the root of your ratio1-drive repository:
+From the root of your r1fs-demo repository:
 
 ```bash
 ./sdk/scripts/extract-from-repo.sh

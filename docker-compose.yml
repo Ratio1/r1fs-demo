@@ -1,17 +1,17 @@
 version: '3.8'
 
 services:
-  ratio1-drive:
+  r1fs-demo:
     build: .
-    image: ratio1-drive:latest
-    container_name: ratio1-drive
+    image: r1fs-demo:latest
+    container_name: r1fs-demo
     ports:
       - "3333:3333"
     environment:
       - NODE_ENV=production
       - CSTORE_API_URL=http://host.docker.internal:8001
       - R1FS_API_URL=http://host.docker.internal:8002
-      - CSTORE_HKEY=${CSTORE_HKEY:-ratio1-drive-demo-1}
+      - CSTORE_HKEY=${CSTORE_HKEY:-r1fs-demo-1}
     networks:
       - ratio1-network
     restart: unless-stopped

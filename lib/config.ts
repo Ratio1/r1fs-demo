@@ -59,7 +59,7 @@ const cstoreAuthSecret = process.env.EE_CSTORE_AUTH_SECRET;
 const cstoreBootstrapAdminPass = process.env.EE_CSTORE_BOOTSTRAP_ADMIN_PASS ?? null;
 
 export const config = {
-  HKEY: process.env.CSTORE_HKEY || 'ratio1-drive-test',
+  HKEY: process.env.CSTORE_HKEY || 'r1fs-demo-test',
   DEBUG: rawDebug,
   MAX_FILE_SIZE_MB: parseInt(process.env.MAX_FILE_SIZE_MB || '10', 10),
   cstoreApiUrl,
