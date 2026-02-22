@@ -28,8 +28,8 @@
 - Request review from a maintainer before merging and confirm all lint and build checks succeed locally.
 
 ## Security & Configuration Tips
-- Copy `.env.example` to `.env.local`; configure keys like `EE_CHAINSTORE_API_URL`, `EE_R1FS_API_URL`, and `CSTORE_HKEY` per README instructions.
-- Configure authentication with `EE_CSTORE_AUTH_HKEY`, `EE_CSTORE_AUTH_SECRET`, optional `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`, plus cookie tweaks via `AUTH_SESSION_COOKIE` or `AUTH_SESSION_TTL_SECONDS`.
+- Copy `.env.example` to `.env.local`; configure keys like `R1EN_CHAINSTORE_API_URL`, `R1EN_R1FS_API_URL`, and `CSTORE_HKEY` per README instructions.
+- Configure authentication with `R1EN_CSTORE_AUTH_HKEY`, `R1EN_CSTORE_AUTH_SECRET`, optional `R1EN_CSTORE_AUTH_BOOTSTRAP_ADMIN_PWD`, plus cookie tweaks via `AUTH_SESSION_COOKIE` or `AUTH_SESSION_TTL_SECONDS`.
 - Never commit secrets or generated `.env*` files; rely on GitHub Actions secrets when publishing Docker images.
 - Use `setup-dev.sh` to bootstrap the local edge simulation while keeping confidential configs outside version control.
 

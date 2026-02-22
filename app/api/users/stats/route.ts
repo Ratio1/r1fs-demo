@@ -1,9 +1,18 @@
+/**
+ * User Statistics API Route
+ * ==========================
+ *
+ * Returns file count statistics per user (admin only).
+ *
+ * Queries CStore to count how many files each user has uploaded
+ * across all edge nodes in the network.
+ */
+
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { readSessionFromCookie } from '@/lib/auth/session';
 import { config } from '@/lib/config';
 import { getRatio1NodeClient } from '@/lib/ratio1-client';
-import { FilesData } from '@/lib/types';
 
 type UserStatsResponse = {
   success: boolean;
@@ -16,6 +25,7 @@ export async function GET() {
   const sessionCookieValue = cookieStore.get(config.auth.sessionCookieName)?.value;
   const session = readSessionFromCookie(sessionCookieValue);
 
+  // Only admin can view user statistics
   if (!session || session.username !== 'admin') {
     return NextResponse.json<UserStatsResponse>(
       { success: false, error: 'Forbidden' },
@@ -25,15 +35,21 @@ export async function GET() {
 
   try {
     const client = getRatio1NodeClient();
-    const data = await client.cstore.hgetall({ hkey: config.HKEY }, { fullResponse: true });
-    const result = (data as any).result || {};
 
-    // Count files per owner
+    // Query all file metadata from CStore
+    const data = await client.cstore.hgetall({ hkey: config.HKEY });
+    const result = (data as any).result || data || {};
+
+    // Count files per owner across all nodes
     const userStats: Record<string, { fileCount: number }> = {};
 
-    Object.entries(result).forEach(([_machine, stringifiedArray]) => {
+    Object.entries(result).forEach(([_, stringifiedArray]) => {
+      if (typeof stringifiedArray !== 'string' || !stringifiedArray.trim()) {
+        return;
+      }
+
       try {
-        const parsed = JSON.parse(stringifiedArray as string);
+        const parsed = JSON.parse(stringifiedArray);
         if (Array.isArray(parsed)) {
           parsed.forEach((file: any) => {
             if (file && typeof file === 'object' && file.owner) {
@@ -45,8 +61,8 @@ export async function GET() {
             }
           });
         }
-      } catch (parseError) {
-        console.error('Error parsing file data:', parseError);
+      } catch {
+        // Skip invalid entries
       }
     });
 
