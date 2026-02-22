@@ -63,11 +63,11 @@ The app will be available at `http://localhost:3333`.
 
 ### 4. First Login
 
-On first run with `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` set:
+On first run with `R1EN_CSTORE_AUTH_BOOTSTRAP_ADMIN_PWD` set:
 - **Username**: `admin`
-- **Password**: (value of `EE_CSTORE_BOOTSTRAP_ADMIN_PASS`)
+- **Password**: (value of `R1EN_CSTORE_AUTH_BOOTSTRAP_ADMIN_PWD`)
 
-Remove `EE_CSTORE_BOOTSTRAP_ADMIN_PASS` from `.env.local` after first login.
+Remove `R1EN_CSTORE_AUTH_BOOTSTRAP_ADMIN_PWD` from `.env.local` after first login.
 
 ## Local Development Modes
 
@@ -98,8 +98,8 @@ For testing against real network conditions with a local edge node.
 1. **Start an R1EN container** (Docker image details to be provided)
 2. **Configure `.env.local`**:
    ```bash
-   EE_CHAINSTORE_API_URL=http://localhost:31234
-   EE_R1FS_API_URL=http://localhost:31235
+   R1EN_CHAINSTORE_API_URL=http://localhost:31234
+   R1EN_R1FS_API_URL=http://localhost:31235
    ```
 3. **Run the app**:
    ```bash
@@ -114,10 +114,10 @@ All configuration is via environment variables. The same code works across all e
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `EE_CHAINSTORE_API_URL` | CStore service URL | `http://localhost:41234` |
-| `EE_R1FS_API_URL` | R1FS service URL | `http://localhost:41235` |
-| `EE_CSTORE_AUTH_HKEY` | Hash key for user credentials | `my-app-auth` |
-| `EE_CSTORE_AUTH_SECRET` | Password hashing secret | `<random-string>` |
+| `R1EN_CHAINSTORE_API_URL` | CStore service URL | `http://localhost:41234` |
+| `R1EN_R1FS_API_URL` | R1FS service URL | `http://localhost:41235` |
+| `R1EN_CSTORE_AUTH_HKEY` | Hash key for user credentials | `my-app-auth` |
+| `R1EN_CSTORE_AUTH_SECRET` | Password hashing secret | `<random-string>` |
 
 ### Optional Variables
 
@@ -214,10 +214,10 @@ r1fs-starter/
 ```bash
 docker build -t r1fs-starter .
 docker run -p 3333:3333 \
-  -e EE_CHAINSTORE_API_URL=http://host.docker.internal:41234 \
-  -e EE_R1FS_API_URL=http://host.docker.internal:41235 \
-  -e EE_CSTORE_AUTH_HKEY=my-auth \
-  -e EE_CSTORE_AUTH_SECRET=my-secret \
+  -e R1EN_CHAINSTORE_API_URL=http://host.docker.internal:41234 \
+  -e R1EN_R1FS_API_URL=http://host.docker.internal:41235 \
+  -e R1EN_CSTORE_AUTH_HKEY=my-auth \
+  -e R1EN_CSTORE_AUTH_SECRET=my-secret \
   r1fs-starter
 ```
 

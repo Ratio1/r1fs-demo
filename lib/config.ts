@@ -7,19 +7,21 @@
  * code works across all deployment environments (sandbox, devnet, production).
  *
  * Environment Variable Naming:
- * - EE_* prefix: Used when running inside an R1EN (Execution Environment)
+ * - R1EN_* prefix: Used when running inside an R1EN (Ratio1 Edge Node)
+ * - EE_* prefix: Legacy names (still supported as fallback)
  * - Fallback names: Used for local development or external deployments
  *
  * Quick Reference:
- * ┌─────────────────────────────┬────────────────────────────────────────────┐
- * │ Variable                    │ Description                                │
- * ├─────────────────────────────┼────────────────────────────────────────────┤
- * │ EE_CHAINSTORE_API_URL       │ CStore service URL (metadata storage)      │
- * │ EE_R1FS_API_URL             │ R1FS service URL (file storage)            │
- * │ EE_CSTORE_AUTH_HKEY         │ Hash key for storing user credentials      │
- * │ EE_CSTORE_AUTH_SECRET       │ Secret for password hashing                │
- * │ CSTORE_HKEY                 │ Hash key for file metadata (app namespace) │
- * └─────────────────────────────┴────────────────────────────────────────────┘
+ * ┌──────────────────────────────────────────┬────────────────────────────────────────────┐
+ * │ Variable                                 │ Description                                │
+ * ├──────────────────────────────────────────┼────────────────────────────────────────────┤
+ * │ R1EN_CHAINSTORE_API_URL                  │ CStore service URL (metadata storage)      │
+ * │ R1EN_R1FS_API_URL                        │ R1FS service URL (file storage)            │
+ * │ R1EN_CSTORE_AUTH_HKEY                    │ Hash key for storing user credentials      │
+ * │ R1EN_CSTORE_AUTH_SECRET                  │ Secret for password hashing                │
+ * │ R1EN_CSTORE_AUTH_BOOTSTRAP_ADMIN_PWD     │ Bootstrap admin password (first run only)  │
+ * │ CSTORE_HKEY                              │ Hash key for file metadata (app namespace) │
+ * └──────────────────────────────────────────┴────────────────────────────────────────────┘
  *
  * Local Development:
  * - Sandbox mode: Set URLs to http://localhost:41234 (CStore) and 41235 (R1FS)
@@ -80,18 +82,19 @@ function parseChainstorePeers(value: string | undefined): string[] {
 // Service URLs
 // -----------------------------------------------------------------------------
 // These are the core endpoints for the Ratio1 services.
-// EE_* variants are auto-set when running inside an R1EN container.
+// R1EN_* variants are auto-set when running inside an R1EN container.
+// EE_* variants are supported as legacy fallback.
 
 const cstoreApiUrl = ensureHttpProtocol(
-  process.env.EE_CHAINSTORE_API_URL || process.env.CHAINSTORE_API_URL
+  process.env.R1EN_CHAINSTORE_API_URL || process.env.EE_CHAINSTORE_API_URL || process.env.CHAINSTORE_API_URL
 );
 
 const r1fsApiUrl = ensureHttpProtocol(
-  process.env.EE_R1FS_API_URL || process.env.R1FS_API_URL
+  process.env.R1EN_R1FS_API_URL || process.env.EE_R1FS_API_URL || process.env.R1FS_API_URL
 );
 
 const chainstorePeers = parseChainstorePeers(
-  process.env.EE_CHAINSTORE_PEERS || process.env.CHAINSTORE_PEERS
+  process.env.R1EN_CHAINSTORE_PEERS || process.env.EE_CHAINSTORE_PEERS || process.env.CHAINSTORE_PEERS
 );
 
 // -----------------------------------------------------------------------------
@@ -101,9 +104,9 @@ const chainstorePeers = parseChainstorePeers(
 
 const authSessionCookieName = process.env.AUTH_SESSION_COOKIE || 'r1-session';
 const authSessionTtlSeconds = parseInt(process.env.AUTH_SESSION_TTL_SECONDS || '86400', 10);
-const cstoreAuthHkey = process.env.EE_CSTORE_AUTH_HKEY;
-const cstoreAuthSecret = process.env.EE_CSTORE_AUTH_SECRET;
-const cstoreBootstrapAdminPass = process.env.EE_CSTORE_BOOTSTRAP_ADMIN_PASS ?? null;
+const cstoreAuthHkey = process.env.R1EN_CSTORE_AUTH_HKEY || process.env.EE_CSTORE_AUTH_HKEY;
+const cstoreAuthSecret = process.env.R1EN_CSTORE_AUTH_SECRET || process.env.EE_CSTORE_AUTH_SECRET;
+const cstoreBootstrapAdminPass = process.env.R1EN_CSTORE_AUTH_BOOTSTRAP_ADMIN_PWD || process.env.EE_CSTORE_BOOTSTRAP_ADMIN_PASS || null;
 
 // -----------------------------------------------------------------------------
 // Exported Configuration Object

@@ -19,8 +19,8 @@
  *
  * **Environment Configuration**
  * The SDK reads service URLs from environment variables:
- * - EE_CHAINSTORE_API_URL: CStore service endpoint (default: localhost:31234)
- * - EE_R1FS_API_URL: R1FS service endpoint (default: localhost:31235)
+ * - R1EN_CHAINSTORE_API_URL: CStore service endpoint (default: localhost:31234)
+ * - R1EN_R1FS_API_URL: R1FS service endpoint (default: localhost:31235)
  *
  * **Why Separate Node/Browser Clients?**
  * - Node.js: Uses native streams for efficient large file handling
